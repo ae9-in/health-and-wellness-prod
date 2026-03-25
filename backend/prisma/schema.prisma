@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  AFFILIATE
+  BRAND
+  ADMIN
+  EXPERT
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  NEW_POST
+  REPLY_TO_COMMENT
+  TRENDING_POST
+  NEW_PARTNERSHIP
+  COMMISSION_EARNED
+  PAYMENT_PROCESSED
+  NEW_AFFILIATE_PROMOTION
+  PRODUCT_SALES_UPDATE
+  PRODUCT_APPROVAL_STATUS
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  fullName  String
+  email     String   @unique
+  password  String
+  blocked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  role      Role     @default(USER)
+  mobile    String?
+  city      String?
+  age       Int?
+  interests String[] @default([])
+
+  posts              Post[]
+  comments           Comment[]
+  likes              Like[]
+  payments           Payment[]
+  sessionRegistrations SessionRegistration[]
+  notifications      Notification[]
+  savedPosts         SavedPost[]
+  affiliate          Affiliate?
+  brand              Brand?
+}
+
+model Affiliate {
+  id          String           @id @default(uuid()) @db.Uuid
+  userId      String           @unique @db.Uuid
+  user        User             @relation(fields: [userId], references: [id])
+  status      ApprovalStatus   @default(PENDING)
+  socialLinks Json?
+  interests   String[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  commissions Commission[]
+  affiliateLinks AffiliateLink[]
+}
+
+model Brand {
+  id               String         @id @default(uuid()) @db.Uuid
+  userId           String         @unique @db.Uuid
+  user             User           @relation(fields: [userId], references: [id])
+  businessCategory String
+  contactPerson    String
+  name             String         @default("Health Brand")
+  phone            String
+  address          String
+  website          String
+  gstNumber        String?
+  status           ApprovalStatus @default(PENDING)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  products         Product[]
+}
+
+model Product {
+  id             String         @id @default(uuid()) @db.Uuid
+  brandId        String         @db.Uuid
+  brand          Brand          @relation(fields: [brandId], references: [id])
+  name           String
+  category       String
+  description    String
+  images         String[]
+  price          Float
+  isPopular      Boolean        @default(false)
+  commissionRate Float          // percentage
+  stock          Int
+  status         ApprovalStatus @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  commissions    Commission[]
+  affiliateLinks AffiliateLink[]
+}
+
+model AffiliateLink {
+  id          String    @id @default(uuid()) @db.Uuid
+  affiliateId String    @db.Uuid
+  productId   String    @db.Uuid
+  url         String    @unique
+  createdAt   DateTime  @default(now())
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
+}
+
+model Commission {
+  id          String    @id @default(uuid()) @db.Uuid
+  affiliateId String    @db.Uuid
+  productId   String    @db.Uuid
+  salesCount  Int
+  amount      Float
+  createdAt   DateTime  @default(now())
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  message   String
+  metadata  Json?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id])
+}
+
+model Post {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String
+  description String
+  category    String
+  videoUrl    String?
+  audioUrl    String?
+  fileUrl     String?
+  authorId    String    @db.Uuid
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  likes       Like[]
+  comments    Comment[]
+  savedBy     SavedPost[]
+  postType    String    @default("ARTICLE")
+  sponsored   Boolean   @default(false)
+  images      String[]  @default([])
+}
+
+model SavedPost {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String   @db.Uuid
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model Comment {
+  id          String   @id @default(uuid()) @db.Uuid
+  commentText String
+  postId      String   @db.Uuid
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Like {
+  id     String @id @default(uuid()) @db.Uuid
+  postId String @db.Uuid
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model Session {
+  id            String   @id @default(uuid()) @db.Uuid
+  title         String
+  description   String
+  hostName      String
+  date          DateTime
+  sessionLink   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  registrations SessionRegistration[]
+}
+
+model SessionRegistration {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @db.Uuid
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([sessionId, userId])
+}
+
+model Payment {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Float
+  plan          String
+  paymentStatus String   @default("success") // success, failed
+  transactionId String   @unique
+  createdAt     DateTime @default(now())
+}
+
+model Partnership {
+  id               String   @id @default(uuid()) @db.Uuid
+  organizationName String
+  contactPerson    String
+  email            String
+  phone            String
+  website          String
+  proposal         String
+  status           String   @default("pending") // pending, approved, rejected
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

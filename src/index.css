@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #F9F5EE;
+    --foreground: #1E1E1E;
+
+    --card: #F2EBD9;
+    --card-foreground: #1E1E1E;
+
+    --popover: #F2EBD9;
+    --popover-foreground: #1E1E1E;
+
+    --primary: #4F7153;
+    --primary-foreground: #F9F5EE;
+
+    --secondary: #7A9E7E;
+    --secondary-foreground: #F9F5EE;
+
+    --muted: #D4C4A8;
+    --muted-foreground: #8A8478;
+
+    --accent: #C4714A;
+    --accent-foreground: #F9F5EE;
+
+    --destructive: #C4714A;
+    --destructive-foreground: #F9F5EE;
+
+    --border: #D4C4A8;
+    --input: #D4C4A8;
+    --ring: #7A9E7E;
+
+    --sage-green: #7A9E7E;
+    --sage-dark: #4F7153;
+    --sage-pale: #C8DBC9;
+    --terracotta: #C4714A;
+    --terracotta-light: #E09070;
+    --charcoal: #1E1E1E;
+    --ink: #2C2C2C;
+    --muted-gray: #8A8478;
+    --sand: #D4C4A8;
+    --deep-forest: #2C4A2E;
+    --burnt-terracotta: #8C4A2A;
+    --earthy-brown: #4A3A2A;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: #F2EBD9;
+    --sidebar-foreground: #1E1E1E;
+    --sidebar-primary: #4F7153;
+    --sidebar-primary-foreground: #F9F5EE;
+    --sidebar-accent: #C8DBC9;
+    --sidebar-accent-foreground: #1E1E1E;
+    --sidebar-border: #D4C4A8;
+    --sidebar-ring: #7A9E7E;
+
+    --wellness-green: #4F7153;
+    --wellness-green-light: #7A9E7E;
+    --wellness-beige: #F9F5EE;
+    --wellness-beige-dark: #C8DBC9;
+    --wellness-olive-deep: #2C2C2C;
+
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  .dark {
+    --background: 86 30% 8%;
+    --foreground: 60 33% 96%;
+    --card: 86 25% 12%;
+    --card-foreground: 60 33% 96%;
+    --popover: 86 25% 12%;
+    --popover-foreground: 60 33% 96%;
+    --primary: 86 41% 40%;
+    --primary-foreground: 86 50% 8%;
+    --secondary: 86 20% 18%;
+    --secondary-foreground: 60 33% 90%;
+    --muted: 86 15% 18%;
+    --muted-foreground: 60 10% 60%;
+    --accent: 43 20% 22%;
+    --accent-foreground: 60 33% 90%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 86 15% 20%;
+    --input: 86 15% 20%;
+    --ring: 86 41% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    user-select: none;
+  }
+
+  nav {
+    font-family: 'DM Sans', 'Inter', 'Segoe UI', system-ui, sans-serif;
+    letter-spacing: 0.01em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm;
+  }
+
+  .wellness-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--wellness-olive-deep)) 100%);
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(86 30% 45%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}

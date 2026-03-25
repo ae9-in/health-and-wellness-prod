@@ -1,0 +1,4 @@
+src/controllers/approvalController.ts(2,26): error TS2724: '"@prisma/client"' has no exported member named 'NotificationTarget'. Did you mean 'Notification'?
+src/controllers/authController.ts(5,32): error TS2724: '"@prisma/client"' has no exported member named 'NotificationTarget'. Did you mean 'Notification'?
+src/controllers/notificationsController.ts(68,18): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
