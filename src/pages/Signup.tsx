@@ -141,7 +141,7 @@ export default function Signup() {
               </TabsTrigger>
             </TabsList>
             
-            <div className="bg-white rounded-[2rem] p-8 shadow-xl border border-primary/5 space-y-6 mt-6">
+            <div className="space-y-6 mt-6">
               {error && (
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -191,112 +191,114 @@ export default function Signup() {
                 </div>
               ) : (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Full Name</Label>
-                      <Input className="rounded-xl h-12 bg-muted/30 border-none" value={form.fullName} onChange={e => setForm(f => ({...f, fullName: e.target.value}))} />
+                  <div className="signup-card space-y-8">
+                    <div className="signup-form-grid">
+                      <div className="signup-field">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Full Name</Label>
+                        <Input className="signup-form-input" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} />
+                      </div>
+                      <div className="signup-field">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Email</Label>
+                        <Input type="email" className="signup-form-input" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                      </div>
+
+                      <div className="signup-field">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Password</Label>
+                        <PasswordInput
+                          className="signup-form-input"
+                          value={form.password}
+                          onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                          autoComplete="new-password"
+                        />
+                      </div>
+                      <div className="signup-field">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Confirm</Label>
+                        <PasswordInput
+                          className="signup-form-input"
+                          value={form.confirm}
+                          onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
+                          autoComplete="new-password"
+                        />
+                      </div>
+
+                      {(role === 'USER' || role === 'AFFILIATE') && (
+                        <>
+                          <div className="signup-field">
+                            <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Mobile Number</Label>
+                            <Input className="signup-form-input" value={form.mobile} onChange={e => setForm(f => ({ ...f, mobile: e.target.value }))} />
+                          </div>
+                          <div className="signup-field">
+                            <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">City</Label>
+                            <Input className="signup-form-input" value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} />
+                          </div>
+                          <div className="signup-field">
+                            <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Age</Label>
+                            <Input type="number" className="signup-form-input" value={form.age} onChange={e => setForm(f => ({ ...f, age: e.target.value }))} />
+                          </div>
+                          <div className="signup-field signup-field-placeholder" aria-hidden="true">
+                            <span className="opacity-0">placeholder</span>
+                          </div>
+                        </>
+                      )}
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Email</Label>
-                      <Input type="email" className="rounded-xl h-12 bg-muted/30 border-none" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} />
+
+                    {role === 'AFFILIATE' && (
+                      <div className="space-y-3">
+                        <Label className="text-xs font-black uppercase tracking-widest text-primary">Social Media Links (Optional)</Label>
+                        <Input className="signup-form-input" placeholder="e.g. Instagram, Website" value={form.socialLinks} onChange={e => setForm(f => ({ ...f, socialLinks: e.target.value }))} />
+                      </div>
+                    )}
+
+                    {role === 'BRAND' && (
+                      <div className="space-y-5">
+                        <div className="space-y-3">
+                          <Label className="text-xs font-black uppercase tracking-widest text-blue-600">Brand Name</Label>
+                          <Input className="signup-form-input" placeholder="e.g. health&wellness Pro" value={form.brandName} onChange={e => setForm(f => ({ ...f, brandName: e.target.value }))} />
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-5">
+                          <div className="space-y-3">
+                            <Label className="text-xs font-black uppercase tracking-widest text-blue-600">Business Category</Label>
+                            <Input className="signup-form-input" placeholder="e.g. Wellness Products" value={form.businessCategory} onChange={e => setForm(f => ({ ...f, businessCategory: e.target.value }))} />
+                          </div>
+                          <div className="space-y-3">
+                            <Label className="text-xs font-black uppercase tracking-widest text-blue-600">GST Number (Optional)</Label>
+                            <Input className="signup-form-input" placeholder="12AAAAA0000A1Z5" value={form.gstNumber} onChange={e => setForm(f => ({ ...f, gstNumber: e.target.value }))} />
+                          </div>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-5">
+                          <div className="space-y-3">
+                            <Label className="text-xs font-black uppercase tracking-widest text-blue-600">Phone Number</Label>
+                            <Input className="signup-form-input" value={form.mobile} onChange={e => setForm(f => ({ ...f, mobile: e.target.value }))} />
+                          </div>
+                          <div className="space-y-3">
+                            <Label className="text-xs font-black uppercase tracking-widest text-blue-600">Website / Social</Label>
+                            <Input className="signup-form-input" placeholder="https://..." value={form.socialLinks} onChange={e => setForm(f => ({ ...f, socialLinks: e.target.value }))} />
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <Label className="text-xs font-black uppercase tracking-widest text-blue-600">Business Address</Label>
+                          <Input className="signup-form-input" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-center">
+                      <Button 
+                        type="button"
+                        onClick={role === 'AFFILIATE' ? handleNext : () => handleSubmit()} 
+                        disabled={isLoading}
+                        className="signup-action-button"
+                      >
+                        {isLoading ? 'Creating Account...' : (role === 'AFFILIATE' ? 'Continue to Interests' : 'Complete Registration')}
+                      </Button>
                     </div>
+
+                    <p className="text-center text-sm font-medium text-muted-foreground pt-2">
+                      Already have an account? <Link to="/login" className="text-primary font-bold hover:underline">Login</Link>
+                    </p>
                   </div>
-
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
-                      <PasswordInput
-                        className="rounded-xl h-12 bg-muted/30 border-none"
-                        value={form.password}
-                        onChange={e => setForm(f => ({...f, password: e.target.value}))}
-                        autoComplete="new-password"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Confirm</Label>
-                      <PasswordInput
-                        className="rounded-xl h-12 bg-muted/30 border-none"
-                        value={form.confirm}
-                        onChange={e => setForm(f => ({...f, confirm: e.target.value}))}
-                        autoComplete="new-password"
-                      />
-                    </div>
-                  </div>
-
-                  {(role === 'USER' || role === 'AFFILIATE') && (
-                    <div className="grid sm:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Mobile Number</Label>
-                        <Input className="rounded-xl h-12 bg-muted/30 border-none" value={form.mobile} onChange={e => setForm(f => ({...f, mobile: e.target.value}))} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">City</Label>
-                        <Input className="rounded-xl h-12 bg-muted/30 border-none" value={form.city} onChange={e => setForm(f => ({...f, city: e.target.value}))} />
-                      </div>
-                    </div>
-                  )}
-
-                  {role === 'USER' && (
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Age</Label>
-                      <Input type="number" className="rounded-xl h-12 bg-muted/30 border-none" value={form.age} onChange={e => setForm(f => ({...f, age: e.target.value}))} />
-                    </div>
-                  )}
-
-                  {role === 'AFFILIATE' && (
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-primary ml-1">Social Media Links (Optional)</Label>
-                      <Input className="rounded-xl h-12 bg-primary/5 border-primary/20" placeholder="e.g. Instagram, Website" value={form.socialLinks} onChange={e => setForm(f => ({...f, socialLinks: e.target.value}))} />
-                    </div>
-                  )}
-
-                  {role === 'BRAND' && (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-black uppercase tracking-widest text-blue-600 ml-1">Brand Name</Label>
-                        <Input className="rounded-xl h-12 bg-blue-50/50 border-blue-200" placeholder="e.g. health&wellness Pro" value={form.brandName} onChange={e => setForm(f => ({...f, brandName: e.target.value}))} />
-                      </div>
-                      <div className="grid sm:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-xs font-black uppercase tracking-widest text-blue-600 ml-1">Business Category</Label>
-                          <Input className="rounded-xl h-12 bg-blue-50/50 border-blue-200" placeholder="e.g. Wellness Products" value={form.businessCategory} onChange={e => setForm(f => ({...f, businessCategory: e.target.value}))} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-black uppercase tracking-widest text-blue-600 ml-1">GST Number (Optional)</Label>
-                          <Input className="rounded-xl h-12 bg-blue-50/50 border-blue-200" placeholder="12AAAAA0000A1Z5" value={form.gstNumber} onChange={e => setForm(f => ({...f, gstNumber: e.target.value}))} />
-                        </div>
-                      </div>
-                      <div className="grid sm:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-xs font-black uppercase tracking-widest text-blue-600 ml-1">Phone Number</Label>
-                          <Input className="rounded-xl h-12 bg-blue-50/50 border-blue-200" value={form.mobile} onChange={e => setForm(f => ({...f, mobile: e.target.value}))} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-black uppercase tracking-widest text-blue-600 ml-1">Website / Social</Label>
-                          <Input className="rounded-xl h-12 bg-blue-50/50 border-blue-200" placeholder="https://..." value={form.socialLinks} onChange={e => setForm(f => ({...f, socialLinks: e.target.value}))} />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-black uppercase tracking-widest text-blue-600 ml-1">Business Address</Label>
-                        <Input className="rounded-xl h-12 bg-blue-50/50 border-blue-200" value={form.address} onChange={e => setForm(f => ({...f, address: e.target.value}))} />
-                      </div>
-                    </div>
-                  )}
-
-                  <Button 
-                    type="button"
-                    onClick={role === 'AFFILIATE' ? handleNext : () => handleSubmit()} 
-                    disabled={isLoading}
-                    className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20"
-                  >
-                    {isLoading ? 'Creating Account...' : (role === 'AFFILIATE' ? 'Continue to Interests' : 'Complete Registration')}
-                  </Button>
                 </div>
               )}
-              
-              <p className="text-center text-sm font-medium text-muted-foreground pt-2">
-                Already have an account? <Link to="/login" className="text-primary font-bold hover:underline">Login</Link>
-              </p>
             </div>
           </Tabs>
         )}
