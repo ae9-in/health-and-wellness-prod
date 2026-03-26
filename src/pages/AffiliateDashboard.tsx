@@ -130,26 +130,7 @@ export default function AffiliateDashboard() {
           <BackButton />
         </div>
 
-        <div className="grid lg:grid-cols-[300px_1fr] gap-8">
-          {/* Left Column: Sidebar */}
-          <aside className="space-y-6">
-            <NotificationPanel />
-            
-            {/* Quick Actions or Additional Info (Added for balance) */}
-            <div className="bg-white rounded-[2rem] p-6 border border-primary/5 shadow-sm">
-              <h3 className="font-bold text-sm mb-4 uppercase tracking-wider text-muted-foreground">Quick Actions</h3>
-              <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-xs font-bold" asChild>
-                  <Link to="/products"><ShoppingBag className="h-4 w-4" /> Browse Shop</Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-xs font-bold" asChild>
-                  <Link to="/community"><TrendingUp className="h-4 w-4" /> View Feed</Link>
-                </Button>
-              </div>
-            </div>
-          </aside>
-
-          {/* Right Column: Main Content */}
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] gap-8">
           <div className="space-y-8">
             {/* Header Section */}
             <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-primary/5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden relative">
@@ -386,6 +367,23 @@ export default function AffiliateDashboard() {
               </div>
             </div>
           </div>
+
+          <aside className="space-y-6">
+            <NotificationPanel />
+            
+            {/* Quick Actions or Additional Info (Added for balance) */}
+            <div className="bg-white rounded-[2rem] p-6 border border-primary/5 shadow-sm">
+              <h3 className="font-bold text-sm mb-4 uppercase tracking-wider text-muted-foreground">Quick Actions</h3>
+              <div className="space-y-3">
+                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-xs font-bold" asChild>
+                  <Link to="/products"><ShoppingBag className="h-4 w-4" /> Browse Shop</Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-xs font-bold" asChild>
+                  <Link to="/community"><TrendingUp className="h-4 w-4" /> View Feed</Link>
+                </Button>
+              </div>
+            </div>
+          </aside>
         </div>
       </main>
       <Footer />

@@ -59,23 +59,7 @@ export default function UserDashboard() {
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8">
         <BackButton />
-        <div className="grid lg:grid-cols-[320px_1fr] gap-10">
-          <aside className="space-y-8">
-            <NotificationPanel />
-            
-            {/* Follow Topics */}
-            <div className="bg-white rounded-3xl p-6 border border-primary/5 shadow-sm">
-              <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Topics to Follow</h4>
-              <div className="flex flex-wrap gap-2">
-                {['Nutrition', 'Mental Health', 'Yoga', 'BioHacking', 'Sleep'].map(topic => (
-                  <button key={topic} className="px-3 py-1.5 rounded-full bg-muted/50 text-[10px] font-bold hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-1">
-                    <Hash className="h-3 w-3" /> {topic}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </aside>
-          
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-10">
           <div className="space-y-10">
             <div className="mb-4">
               <h1 className="font-display text-4xl font-bold mb-3 tracking-tight text-[#1A2E05]">Wellness Hub</h1>
@@ -152,25 +136,41 @@ export default function UserDashboard() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-[2.5rem] p-8 border border-primary/5 shadow-sm">
-                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-purple-600" /> Booked Sessions
-                </h3>
-                <div className="space-y-4">
-                  {registeredSessions.slice(0, 3).map(session => (
-                    <div key={session.id} className="p-4 rounded-xl bg-purple-50/50 border border-purple-100">
-                      <p className="font-bold text-sm mb-1 line-clamp-1">{session.title}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(session.date).toLocaleDateString()}</p>
-                    </div>
-                  ))}
-                  {registeredSessions.length === 0 && <p className="text-sm text-muted-foreground italic py-4">No sessions booked yet.</p>}
-                  <Button variant="link" className="p-0 h-auto font-bold text-purple-600 group" asChild>
-                    <Link to="/sessions">Find New Workshops <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" /></Link>
-                  </Button>
-                </div>
+            <div className="bg-white rounded-[2.5rem] p-8 border border-primary/5 shadow-sm">
+              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-purple-600" /> Booked Sessions
+              </h3>
+              <div className="space-y-4">
+                {registeredSessions.slice(0, 3).map(session => (
+                  <div key={session.id} className="p-4 rounded-xl bg-purple-50/50 border border-purple-100">
+                    <p className="font-bold text-sm mb-1 line-clamp-1">{session.title}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(session.date).toLocaleDateString()}</p>
+                  </div>
+                ))}
+                {registeredSessions.length === 0 && <p className="text-sm text-muted-foreground italic py-4">No sessions booked yet.</p>}
+                <Button variant="link" className="p-0 h-auto font-bold text-purple-600 group" asChild>
+                  <Link to="/sessions">Find New Workshops <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" /></Link>
+                </Button>
               </div>
             </div>
           </div>
+
+          <aside className="space-y-8">
+            <NotificationPanel />
+            
+            {/* Follow Topics */}
+            <div className="bg-white rounded-3xl p-6 border border-primary/5 shadow-sm">
+              <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Topics to Follow</h4>
+              <div className="flex flex-wrap gap-2">
+                {['Nutrition', 'Mental Health', 'Yoga', 'BioHacking', 'Sleep'].map(topic => (
+                  <button key={topic} className="px-3 py-1.5 rounded-full bg-muted/50 text-[10px] font-bold hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-1">
+                    <Hash className="h-3 w-3" /> {topic}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
         </div>
       </main>
       <Footer />

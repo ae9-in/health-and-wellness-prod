@@ -70,41 +70,7 @@ export default function BrandDashboard() {
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8">
         <BackButton />
-        <div className="grid lg:grid-cols-[320px_1fr] gap-10">
-          <aside className="space-y-8">
-            <NotificationPanel />
-            
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-[#1A2E05] text-white rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden"
-            >
-              <div className="relative z-10">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-4">Brand Profile</p>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-14 w-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center font-display text-2xl font-bold">
-                    {user.fullName.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg leading-tight">{user.fullName}</h3>
-                    <p className="text-xs opacity-60 flex items-center gap-1"><Globe className="h-3 w-3" /> Partner Brand</p>
-                  </div>
-                </div>
-                <div className="space-y-4 pt-4 border-t border-white/10">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="opacity-60">Products</span>
-                    <span className="font-bold">{products.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="opacity-60">Avg. Rating</span>
-                    <span className="font-bold text-primary">4.9 ★</span>
-                  </div>
-                </div>
-                <Button variant="secondary" className="w-full mt-8 rounded-xl font-bold">Edit Profile</Button>
-              </div>
-            </motion.div>
-          </aside>
-          
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-10">
           <div className="space-y-10">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
@@ -263,6 +229,40 @@ export default function BrandDashboard() {
               </TabsContent>
             </Tabs>
           </div>
+
+          <aside className="space-y-8">
+            <NotificationPanel />
+            
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-[#1A2E05] text-white rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden"
+            >
+              <div className="relative z-10">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-4">Brand Profile</p>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-14 w-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center font-display text-2xl font-bold">
+                    {user.fullName.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg leading-tight">{user.fullName}</h3>
+                    <p className="text-xs opacity-60 flex items-center gap-1"><Globe className="h-3 w-3" /> Partner Brand</p>
+                  </div>
+                </div>
+                <div className="space-y-4 pt-4 border-t border-white/10">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="opacity-60">Products</span>
+                    <span className="font-bold">{products.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="opacity-60">Avg. Rating</span>
+                    <span className="font-bold text-primary">4.9 ★</span>
+                  </div>
+                </div>
+                <Button variant="secondary" className="w-full mt-8 rounded-xl font-bold">Edit Profile</Button>
+              </div>
+            </motion.div>
+          </aside>
         </div>
       </main>
       <Footer />
