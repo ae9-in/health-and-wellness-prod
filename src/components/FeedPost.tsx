@@ -26,14 +26,16 @@ const getFallbackImage = (category: string) => {
 
 interface FeedPostProps {
   post: Post;
+  onSelect?: (post: Post) => void;
+  initialShowComments?: boolean;
 }
 
-export default function FeedPost({ post }: FeedPostProps) {
+export default function FeedPost({ post, onSelect, initialShowComments }: FeedPostProps) {
   const { user, token } = useAuth();
   const [isLiked, setIsLiked] = useState(user ? post.likes.includes(user.id) : false);
   const [likesCount, setLikesCount] = useState(post.likes.length);
   const [isSaved, setIsSaved] = useState(user ? (post as any).savedUsers?.includes(user.id) : false);
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(initialShowComments ?? false);
   const [commentText, setCommentText] = useState('');
 
   const baseUrl = API_URL.replace('/api', '');
@@ -118,7 +120,10 @@ export default function FeedPost({ post }: FeedPostProps) {
       initial={{ opacity: 0, scale: 0.98 }}
       whileInView={{ opacity: 1, scale: 1 }}
       viewport={{ once: true }}
-      className={`bg-white rounded-[2.5rem] shadow-sm border border-slate-100/80 overflow-hidden mb-8 w-full transition-all hover:shadow-xl hover:shadow-slate-200/50 group ${getPostTypeStyle()}`}
+      className={`bg-white rounded-[2.5rem] shadow-sm border border-slate-100/80 overflow-hidden mb-8 w-full transition-all hover:shadow-xl hover:-translate-y-1 hover:shadow-slate-200/50 group ${getPostTypeStyle()}`}
+      onClick={() => onSelect?.(post)}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
     >
       {/* Header */}
       <div className="px-8 py-6 flex items-center justify-between">
@@ -245,45 +250,45 @@ export default function FeedPost({ post }: FeedPostProps) {
 
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              onClick={handleLike} 
-              className={`h-12 px-6 rounded-2xl gap-3 transition-all ${isLiked ? 'bg-red-50 text-red-600' : 'bg-white border border-slate-100 text-slate-600 hover:bg-slate-50'}`}
-            >
-              <Heart className={`h-5 w-5 ${isLiked ? 'fill-red-600' : ''}`} />
-              <span className="font-black text-xs uppercase tracking-widest">{isLiked ? 'Loved' : 'Love'}</span>
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              onClick={() => setShowComments(!showComments)} 
-              className={`h-12 px-6 rounded-2xl gap-3 bg-white border border-slate-100 text-slate-600 hover:bg-slate-50 transition-all ${showComments ? 'border-primary text-primary' : ''}`}
-            >
-              <MessageCircle className="h-5 w-5" />
-              <span className="font-black text-xs uppercase tracking-widest">Discuss</span>
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleSave} 
-              className={`h-12 w-12 rounded-2xl transition-all ${isSaved ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-white border border-slate-100 text-slate-600 hover:bg-slate-50'}`}
-            >
-              <Bookmark className={`h-5 w-5 ${isSaved ? 'fill-amber-600' : ''}`} />
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleShare} 
-              className="h-12 w-12 rounded-2xl bg-white border border-slate-100 text-slate-600 hover:bg-slate-50 transition-all"
-            >
-              <Share2 className="h-5 w-5" />
-            </Button>
-          </div>
+          <Button 
+            variant="ghost" 
+            onClick={(event) => { event.stopPropagation(); handleLike(); }} 
+            className={`h-12 px-6 rounded-2xl gap-3 transition-all ${isLiked ? 'bg-red-50 text-red-600' : 'bg-white border border-slate-100 text-slate-600 hover:bg-slate-50'}`}
+          >
+            <Heart className={`h-5 w-5 ${isLiked ? 'fill-red-600' : ''}`} />
+            <span className="font-black text-xs uppercase tracking-widest">{isLiked ? 'Loved' : 'Love'}</span>
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            onClick={(event) => { event.stopPropagation(); setShowComments(prev => !prev); }} 
+            className={`h-12 px-6 rounded-2xl gap-3 bg-white border border-slate-100 text-slate-600 hover:bg-slate-50 transition-all ${showComments ? 'border-primary text-primary' : ''}`}
+          >
+            <MessageCircle className="h-5 w-5" />
+            <span className="font-black text-xs uppercase tracking-widest">Discuss</span>
+          </Button>
         </div>
+
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={(event) => { event.stopPropagation(); handleSave(); }} 
+            className={`h-12 w-12 rounded-2xl transition-all ${isSaved ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-white border border-slate-100 text-slate-600 hover:bg-slate-50'}`}
+          >
+            <Bookmark className={`h-5 w-5 ${isSaved ? 'fill-amber-600' : ''}`} />
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={(event) => { event.stopPropagation(); handleShare(); }} 
+            className="h-12 w-12 rounded-2xl bg-white border border-slate-100 text-slate-600 hover:bg-slate-50 transition-all"
+          >
+            <Share2 className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
       </div>
 
       {/* Comment Engine */}
@@ -326,25 +331,26 @@ export default function FeedPost({ post }: FeedPostProps) {
               )}
             </div>
             
-            <div className="mt-8 flex gap-3">
-              <div className="flex-1 relative">
-                <Input 
-                  placeholder="Share your perspective..." 
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleComment()}
-                  className="rounded-2xl h-14 bg-white border-slate-100 focus-visible:ring-primary pl-6 pr-12 shadow-sm"
-                />
-                <motion.div 
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-primary"
-                  onClick={handleComment}
-                >
-                  <Zap className="h-5 w-5 fill-primary" />
-                </motion.div>
+              <div className="mt-8 flex gap-3">
+                <div className="flex-1 relative">
+                  <Input 
+                    placeholder="Share your perspective..." 
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleComment()}
+                    onClick={(event) => event.stopPropagation()}
+                    className="rounded-2xl h-14 bg-white border-slate-100 focus-visible:ring-primary pl-6 pr-12 shadow-sm"
+                  />
+                  <motion.div 
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-primary"
+                    onClick={(event) => { event.stopPropagation(); handleComment(); }}
+                  >
+                    <Zap className="h-5 w-5 fill-primary" />
+                  </motion.div>
+                </div>
               </div>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
