@@ -109,58 +109,70 @@ export default function UserDashboard() {
 
             {/* Activity Sections */}
             <div className="grid gap-8 md:grid-cols-2">
-            <div className="bg-white rounded-[2.5rem] p-8 border border-primary/5 shadow-sm">
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-primary" /> Recent Discussions
-              </h3>
-              <div className="space-y-4">
-                {recentDiscussions.map(entry => (
-                  <div key={`${entry.type}-${entry.id}`} className="p-4 rounded-xl bg-muted/20 border border-border/40">
-                    <p className="font-bold text-sm mb-1 line-clamp-1">{entry.title}</p>
-                    <p className="text-xs text-muted-foreground uppercase tracking-[0.3em] mb-2">
-                      {entry.type === 'comment' ? 'Commented' : 'Posted'} {new Date(entry.date).toLocaleDateString()}
+              <div className="bg-white rounded-[2.5rem] p-8 border border-primary/5 shadow-sm">
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-primary" /> Recent Discussions
+                </h3>
+                <div className="space-y-4">
+                  {recentDiscussions.map(entry => (
+                    <div key={`${entry.type}-${entry.id}`} className="p-4 rounded-xl bg-muted/20 border border-border/40">
+                      <p className="font-bold text-sm mb-1 line-clamp-1">{entry.title}</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-[0.3em] mb-2">
+                        {entry.type === 'comment' ? 'Commented' : 'Posted'} {new Date(entry.date).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-slate-600 line-clamp-2">
+                        {entry.snippet}
+                      </p>
+                    </div>
+                  ))}
+                  {recentDiscussions.length === 0 && (
+                    <p className="text-sm text-muted-foreground italic py-4">
+                      No recent discussions yet. Start a conversation or reply to a post to see it here.
                     </p>
-                    <p className="text-sm text-slate-600 line-clamp-2">
-                      {entry.snippet}
-                    </p>
-                  </div>
-                ))}
-                {recentDiscussions.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic py-4">
-                    No recent discussions yet. Start a conversation or reply to a post to see it here.
-                  </p>
-                )}
-                  <Button variant="link" className="p-0 h-auto font-bold text-primary group" asChild>
-                    <Link to="/discussions">Browse All Discussions <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" /></Link>
-                  </Button>
+                  )}
                 </div>
+                <Button variant="link" className="mt-2 p-0 h-auto font-bold text-primary group" asChild>
+                  <Link to="/discussions">Browse All Discussions <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" /></Link>
+                </Button>
               </div>
 
-            <div className="bg-white rounded-[2.5rem] p-8 border border-primary/5 shadow-sm">
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-purple-600" /> Booked Sessions
-              </h3>
-              <div className="space-y-4">
-                {registeredSessions.slice(0, 3).map(session => (
-                  <div key={session.id} className="p-4 rounded-xl bg-purple-50/50 border border-purple-100">
-                    <p className="font-bold text-sm mb-1 line-clamp-1">{session.title}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(session.date).toLocaleDateString()}</p>
-                  </div>
-                ))}
-                {registeredSessions.length === 0 && <p className="text-sm text-muted-foreground italic py-4">No sessions booked yet.</p>}
-                <Button variant="link" className="p-0 h-auto font-bold text-purple-600 group" asChild>
+              <div className="bg-white rounded-[2.5rem] p-8 border border-primary/5 shadow-sm">
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-purple-600" /> Booked Sessions
+                </h3>
+                <div className="space-y-4">
+                  {registeredSessions.slice(0, 3).map(session => (
+                    <div key={session.id} className="p-4 rounded-xl bg-purple-50/50 border border-purple-100">
+                      <p className="font-bold text-sm mb-1 line-clamp-1">{session.title}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(session.date).toLocaleDateString()}</p>
+                    </div>
+                  ))}
+                  {registeredSessions.length === 0 && <p className="text-sm text-muted-foreground italic py-4">No sessions booked yet.</p>}
+                </div>
+                <Button variant="link" className="mt-2 p-0 h-auto font-bold text-purple-600 group" asChild>
                   <Link to="/sessions">Find New Workshops <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" /></Link>
                 </Button>
               </div>
             </div>
           </div>
 
-          <aside className="space-y-8">
+          <aside className="space-y-6 lg:sticky lg:top-8">
             <NotificationPanel />
-            
-            {/* Follow Topics */}
-            <div className="bg-white rounded-3xl p-6 border border-primary/5 shadow-sm">
-              <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Topics to Follow</h4>
+
+            <div className="bg-white rounded-[2.5rem] p-6 border border-primary/5 shadow-sm space-y-4">
+              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Quick Actions</p>
+              <div className="space-y-3">
+                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-sm font-bold" asChild>
+                  <Link to="/products"><ShoppingCart className="h-4 w-4" /> Browse Shop</Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-sm font-bold" asChild>
+                  <Link to="/community"><MessageSquare className="h-4 w-4" /> View Discussions</Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[2.5rem] p-6 border border-primary/5 shadow-sm">
+              <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Topics to Follow</h4>
               <div className="flex flex-wrap gap-2">
                 {['Nutrition', 'Mental Health', 'Yoga', 'BioHacking', 'Sleep'].map(topic => (
                   <button key={topic} className="px-3 py-1.5 rounded-full bg-muted/50 text-[10px] font-bold hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-1">
@@ -169,8 +181,24 @@ export default function UserDashboard() {
                 ))}
               </div>
             </div>
+
+            <div className="bg-[#1A2E05] text-white rounded-[2.5rem] p-6 border border-white/20 shadow-lg space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Member Snapshot</p>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-white/20 flex items-center justify-center text-xl font-black">
+                  {user.fullName.charAt(0)}
+                </div>
+                <div>
+                  <p className="font-bold text-lg">{user.fullName}</p>
+                  <p className="text-xs uppercase tracking-[0.3em] opacity-80">Wellness Member</p>
+                </div>
+              </div>
+              {user.city && (
+                <p className="text-sm text-white/80">Location: {user.city}</p>
+              )}
+              <p className="text-sm text-white/80">Posts: {userPosts.length}</p>
+            </div>
           </aside>
-        </div>
         </div>
       </main>
       <Footer />

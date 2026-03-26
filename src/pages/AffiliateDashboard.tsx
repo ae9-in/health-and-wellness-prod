@@ -368,18 +368,44 @@ export default function AffiliateDashboard() {
             </div>
           </div>
 
-          <aside className="space-y-6">
+          <aside className="space-y-6 lg:sticky lg:top-8">
             <NotificationPanel />
-            
-            {/* Quick Actions or Additional Info (Added for balance) */}
-            <div className="bg-white rounded-[2rem] p-6 border border-primary/5 shadow-sm">
-              <h3 className="font-bold text-sm mb-4 uppercase tracking-wider text-muted-foreground">Quick Actions</h3>
+
+            <div className="bg-white rounded-[2.5rem] p-6 border border-primary/5 shadow-sm space-y-4">
+              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Quick Actions</p>
               <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-xs font-bold" asChild>
+                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-sm font-bold" asChild>
                   <Link to="/products"><ShoppingBag className="h-4 w-4" /> Browse Shop</Link>
                 </Button>
-                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-xs font-bold" asChild>
+                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-sm font-bold" asChild>
                   <Link to="/community"><TrendingUp className="h-4 w-4" /> View Feed</Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[2.5rem] p-6 border border-primary/5 shadow-sm">
+              <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Topics to Follow</h4>
+              <div className="flex flex-wrap gap-2">
+                {['Nutrition', 'Fitness', 'Mental Health', 'Lifestyle', 'Supplements'].map(tag => (
+                  <span key={tag} className="px-3 py-1 rounded-full border border-primary/10 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-[#1A2E05] text-white rounded-[2.5rem] p-6 border border-white/20 shadow-lg space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Affiliate Snapshot</p>
+              <div className="space-y-2 text-sm">
+                <p className="font-bold text-lg">{user.fullName}</p>
+                <p className="text-white/80">Verified Partner</p>
+                <p className="text-white/80">Commission: 20%</p>
+                <p className="text-white/80">Active since 2024</p>
+              </div>
+              <div className="bg-white/10 rounded-2xl p-3 flex items-center justify-between text-xs font-mono">
+                <span className="truncate">{`https://wellnest.community/join?ref=${user.id}`}</span>
+                <Button variant="ghost" className="text-white p-0 text-sm" onClick={() => { navigator.clipboard.writeText(referralLink); toast.success('Link copied!'); }}>
+                  Copy
                 </Button>
               </div>
             </div>

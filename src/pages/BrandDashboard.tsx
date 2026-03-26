@@ -77,14 +77,6 @@ export default function BrandDashboard() {
                 <h1 className="font-display text-4xl font-bold mb-2 tracking-tight text-[#1A2E05]">Brand Console</h1>
                 <p className="text-muted-foreground text-lg font-medium">Empowering your wellness commerce. Welcome back.</p>
               </div>
-              <div className="flex gap-3">
-                <Button variant="outline" className="rounded-xl h-12 font-bold gap-2">
-                  <BarChart3 className="h-4 w-4" /> Reports
-                </Button>
-                <Button className="rounded-xl h-12 font-bold gap-2 bg-[#1A2E05] hover:bg-[#2A3E15] shadow-lg shadow-primary/10" onClick={() => setActiveTab('inventory')}>
-                  <Plus className="h-4 w-4" /> New Product
-                </Button>
-              </div>
             </div>
 
             {/* Performance Snapshot */}
@@ -230,37 +222,52 @@ export default function BrandDashboard() {
             </Tabs>
           </div>
 
-          <aside className="space-y-8">
+          <aside className="space-y-8 lg:sticky lg:top-8">
             <NotificationPanel />
-            
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-[#1A2E05] text-white rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden"
-            >
-              <div className="relative z-10">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-4">Brand Profile</p>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-14 w-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center font-display text-2xl font-bold">
-                    {user.fullName.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg leading-tight">{user.fullName}</h3>
-                    <p className="text-xs opacity-60 flex items-center gap-1"><Globe className="h-3 w-3" /> Partner Brand</p>
-                  </div>
-                </div>
-                <div className="space-y-4 pt-4 border-t border-white/10">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="opacity-60">Products</span>
-                    <span className="font-bold">{products.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="opacity-60">Avg. Rating</span>
-                    <span className="font-bold text-primary">4.9 ★</span>
-                  </div>
-                </div>
-                <Button variant="secondary" className="w-full mt-8 rounded-xl font-bold">Edit Profile</Button>
+
+            <div className="bg-white rounded-[3rem] p-6 border border-primary/5 shadow-sm space-y-4">
+              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Quick Actions</p>
+              <div className="space-y-3">
+                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-sm font-bold" asChild>
+                  <Link to="/reports"><BarChart3 className="h-4 w-4" /> View Reports</Link>
+                </Button>
+                <Button className="w-full justify-start gap-2 rounded-xl text-sm font-bold bg-[#1A2E05] text-white hover:bg-[#25300c]" onClick={() => setActiveTab('inventory')}>
+                  <Plus className="h-4 w-4" /> Add New Product
+                </Button>
               </div>
+            </div>
+
+            <div className="bg-white rounded-[3rem] p-6 border border-primary/5 shadow-sm">
+              <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Topics to Follow</h4>
+              <div className="flex flex-wrap gap-2">
+                {['Nutrition', 'Fitness', 'Lifestyle', 'Self-care'].map(topic => (
+                  <span key={topic} className="px-3 py-1 rounded-full border border-primary/10 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    #{topic}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-[#1A2E05] text-white rounded-[2.5rem] p-6 shadow-xl border border-white/20 space-y-4"
+            >
+              <h5 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Brand Profile</h5>
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl font-bold">
+                  {user.fullName.charAt(0)}
+                </div>
+                <div>
+                  <p className="font-bold text-lg">{user.fullName}</p>
+                  <p className="text-xs uppercase tracking-[0.3em] opacity-80">Partner Brand</p>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <p className="flex justify-between text-white/80"><span>Products</span><span>{products.length}</span></p>
+                <p className="flex justify-between text-white/80"><span>Avg. Rating</span><span>4.9 ★</span></p>
+              </div>
+              <Button variant="secondary" className="w-full rounded-xl font-bold bg-white text-[#1A2E05]">Edit Profile</Button>
             </motion.div>
           </aside>
         </div>
