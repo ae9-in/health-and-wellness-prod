@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CATEGORIES } from '@/lib/constants';
-import { Search, X, SlidersHorizontal, Star } from 'lucide-react';
+import { Search, SlidersHorizontal, Star } from 'lucide-react';
 
 interface ProductFiltersProps {
   filters: {
@@ -17,29 +17,44 @@ interface ProductFiltersProps {
   brands: Array<{ id: string, name: string }>;
   setFilters: (filters: any) => void;
   onClear: () => void;
+  className?: string;
 }
 
-export default function ProductFilters({ filters, brands, setFilters, onClear }: ProductFiltersProps) {
+export default function ProductFilters({ filters, brands, setFilters, onClear, className }: ProductFiltersProps) {
+  const wrapperClass =
+    'space-y-5 glass-card shadow-sm border border-[#7A9E7E]/40 bg-[#F9F5EE] rounded-2xl p-6';
+
   const handleCategoryClick = (cat: string) => {
     setFilters({ ...filters, category: filters.category === cat ? '' : cat });
   };
 
+  const hasActiveFilters =
+    Boolean(filters.category || filters.minPrice || filters.maxPrice || filters.popular || filters.search || filters.brandId);
+
   return (
-    <div className="space-y-8 glass-card p-6 rounded-2xl border border-[#7A9E7E]/40 bg-[#F9F5EE] sticky top-24">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl font-bold flex items-center gap-2 text-[#4F7153]">
-          <SlidersHorizontal className="w-5 h-5 text-[#7A9E7E]" /> Filters
+    <div className={`${wrapperClass} ${className ?? ''}`}>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-xl font-bold inline-flex items-center gap-2 text-[#4F7153]">
+          <SlidersHorizontal className="w-5 h-5 text-[#7A9E7E]" />
+          Filters
         </h2>
-        {(filters.category || filters.minPrice || filters.maxPrice || filters.popular || filters.search) && (
-          <Button variant="ghost" size="sm" onClick={onClear} className="h-8 text-xs text-[#4F7153] hover:text-[#7A9E7E]">
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClear}
+            className="h-8 text-xs text-[#4F7153] hover:text-[#7A9E7E]"
+          >
             Clear all
           </Button>
         )}
       </div>
 
       {/* Search */}
-      <div className="space-y-3">
-        <Label htmlFor="search">Search Products</Label>
+      <div className="space-y-4">
+        <Label htmlFor="search" className="text-sm font-semibold">
+          Search Products
+        </Label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7A9E7E]" />
           <Input
@@ -53,16 +68,16 @@ export default function ProductFilters({ filters, brands, setFilters, onClear }:
       </div>
 
       {/* Categories */}
-      <div className="space-y-3">
-        <Label>Categories</Label>
+      <div className="space-y-4">
+        <Label className="text-sm font-semibold">Categories</Label>
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.map((cat) => (
             <Badge
               key={cat}
               variant={filters.category === cat ? 'default' : 'outline'}
-              className={`cursor-pointer px-3 py-1 transition-all text-sm ${
-                filters.category === cat 
-                  ? 'bg-[#7A9E7E] text-white shadow-lg shadow-[#7A9E7E]/30' 
+              className={`cursor-pointer px-3 py-1 text-sm transition-all ${
+                filters.category === cat
+                  ? 'bg-[#7A9E7E] text-white shadow-lg shadow-[#7A9E7E]/30'
                   : 'border-[#7A9E7E]/40 text-[#4F7153] hover:bg-[#7A9E7E]/10 hover:border-[#7A9E7E]'
               }`}
               onClick={() => handleCategoryClick(cat)}
@@ -74,8 +89,8 @@ export default function ProductFilters({ filters, brands, setFilters, onClear }:
       </div>
 
       {/* Price Range */}
-      <div className="space-y-3">
-        <Label className="text-[#4F7153]">Price Range (₹)</Label>
+      <div className="space-y-4">
+        <Label className="text-sm font-semibold text-[#4F7153]">Price Range (₹)</Label>
         <div className="grid grid-cols-2 gap-3">
           <Input
             type="number"
@@ -95,10 +110,14 @@ export default function ProductFilters({ filters, brands, setFilters, onClear }:
       </div>
 
       {/* Popular Products */}
-      <div className="flex items-center justify-between p-3 rounded-xl border border-[#7A9E7E]/40 bg-[#C8DBC9]/70 cursor-pointer hover:bg-[#7A9E7E]/20 transition-colors"
-           onClick={() => setFilters({ ...filters, popular: !filters.popular })}>
+      <div
+        className="flex items-center justify-between p-3 rounded-xl border border-[#7A9E7E]/40 bg-[#C8DBC9]/70 cursor-pointer hover:bg-[#7A9E7E]/20 transition-colors"
+        onClick={() => setFilters({ ...filters, popular: !filters.popular })}
+      >
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg transition-colors ${filters.popular ? 'bg-[#4F7153] text-white' : 'bg-white text-[#7A9E7E] border border-[#7A9E7E]/40'}`}>
+          <div
+            className={`p-2 rounded-lg transition-colors ${filters.popular ? 'bg-[#4F7153] text-white' : 'bg-white text-[#7A9E7E] border border-[#7A9E7E]/40'}`}
+          >
             <Star className={`w-4 h-4 ${filters.popular ? 'fill-white' : ''}`} />
           </div>
           <div>
@@ -106,14 +125,18 @@ export default function ProductFilters({ filters, brands, setFilters, onClear }:
             <div className="text-[10px] text-[#7A9E7E]">Most loved by community</div>
           </div>
         </div>
-        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${filters.popular ? 'border-[#4F7153] bg-[#4F7153]' : 'border-[#7A9E7E]/30'}`}>
+        <div
+          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+            filters.popular ? 'border-[#4F7153] bg-[#4F7153]' : 'border-[#7A9E7E]/30'
+          }`}
+        >
           {filters.popular && <div className="w-2 h-2 rounded-full bg-white transition-all scale-100" />}
         </div>
       </div>
 
       {/* Brands */}
       <div className="space-y-3">
-        <Label>Brands</Label>
+        <Label className="text-sm font-semibold">Brands</Label>
         <div className="flex flex-wrap gap-2">
           <Badge
             variant={filters.brandId === '' ? 'default' : 'outline'}
@@ -126,7 +149,9 @@ export default function ProductFilters({ filters, brands, setFilters, onClear }:
             <Badge
               key={brand.id}
               variant={filters.brandId === brand.id ? 'default' : 'outline'}
-              className={`cursor-pointer px-3 py-1 transition-all ${filters.brandId === brand.id ? 'bg-[#7A9E7E] text-white shadow-lg' : 'border border-[#7A9E7E]/40 text-[#4F7153]'}`}
+              className={`cursor-pointer px-3 py-1 transition-all ${
+                filters.brandId === brand.id ? 'bg-[#7A9E7E] text-white shadow-lg' : 'border border-[#7A9E7E]/40 text-[#4F7153]'
+              }`}
               onClick={() => setFilters({ ...filters, brandId: brand.id })}
             >
               {brand.name}
