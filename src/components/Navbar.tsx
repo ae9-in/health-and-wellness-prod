@@ -2,23 +2,22 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-import { 
-  Leaf, 
-  Menu, 
-  X, 
-  User, 
-  LogOut, 
-  LayoutDashboard, 
-  Settings, 
+import {
+  Leaf,
+  Menu,
+  X,
+  User,
+  LogOut,
+  LayoutDashboard,
+  Settings,
   ChevronDown,
   ShoppingBag,
   MessageSquare,
   Users,
   Calendar,
   Home,
-  ArrowLeft
+  ArrowLeft,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import NotificationBell from './NotificationBell';
 import {
   DropdownMenu,
@@ -29,9 +28,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Navbar() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -94,16 +94,6 @@ export default function Navbar() {
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
-          {location.pathname !== '/' && (
-            <button
-              type="button"
-              onClick={() => window.history.back()}
-              className="hidden sm:flex items-center gap-1 rounded-xl px-4 py-2 text-sm font-bold text-[#4F7153] transition-colors hover:text-[#1E1E1E] hover:bg-white/70"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </button>
-          )}
           {user ? (
             <div className="flex items-center gap-3">
               <NotificationBell />

@@ -383,17 +383,6 @@ export default function AffiliateDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] p-6 border border-primary/5 shadow-sm">
-              <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Topics to Follow</h4>
-              <div className="flex flex-wrap gap-2">
-                {['Nutrition', 'Fitness', 'Mental Health', 'Lifestyle', 'Supplements'].map(tag => (
-                  <span key={tag} className="px-3 py-1 rounded-full border border-primary/10 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-
             <div className="bg-[#1A2E05] text-white rounded-[2.5rem] p-6 border border-white/20 shadow-lg space-y-4">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Affiliate Snapshot</p>
               <div className="space-y-2 text-sm">

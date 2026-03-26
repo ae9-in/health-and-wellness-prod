@@ -5,9 +5,21 @@ import { getPosts, API_BASE as API_URL } from '@/lib/api';
 import { CATEGORIES } from '@/lib/constants';
 import { socket } from '@/lib/socket';
 import { 
-  Menu, Bell, User as UserIcon, Plus, Search, 
-  Loader2, Filter, X, Image as ImageIcon, Video, Music, FileText,
-  Sparkles, Zap, Trophy, Heart, MessageSquare, Bookmark
+  Plus, 
+  Loader2, 
+  Filter, 
+  X, 
+  Image as ImageIcon, 
+  Video, 
+  Music, 
+  FileText,
+  Sparkles, 
+  Zap, 
+  Trophy, 
+  Heart, 
+  MessageSquare, 
+  Bookmark,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -119,51 +131,21 @@ export default function CommunityFeed() {
   return (
     <div className="min-h-screen bg-[#F9F5EE] flex flex-col font-sans selection:bg-primary/20">
       <Navbar />
-      
-      {/* Premium Header */}
-      <header className="sticky top-[64px] z-40 bg-gradient-to-br from-[#2C4A2E] to-[#4A3A2A] border-b border-[#4A3A2A]/80 shadow-2xl text-white">
-        <div className="max-w-[1400px] mx-auto h-[72px] flex items-center justify-between px-8">
-          <div className="flex items-center gap-6">
-            <button className="h-12 w-12 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/5 rounded-2xl transition-all">
-              <Menu className="h-6 w-6" />
-            </button>
-              <div className="hidden lg:block">
-                <h1 className="text-2xl font-black text-white tracking-tight">Community Timeline</h1>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80 mt-0.5 ml-0.5">Global Wellness Network</p>
-            </div>
-          </div>
-
-          <div className="flex-1 max-w-xl px-12">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-              <Input 
+      <div className="bg-[#F9F5EE]">
+        <div className="max-w-[1200px] w-full mx-auto px-4 py-6 sm:px-6 lg:px-8">
+          <div className="max-w-[520px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search articles, tips, or experts..." 
-                className="h-12 pl-12 pr-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-400 font-medium"
+                placeholder="Search articles, tips, or experts..."
+                className="h-12 w-full rounded-full border border-slate-200 bg-white px-10 text-sm focus:ring-2 focus:ring-primary/40"
               />
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button className="h-12 w-12 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/5 rounded-2xl transition-all relative group">
-              <Bell className="h-6 w-6" />
-              <div className="absolute top-3 right-3 h-2 w-2 bg-red-500 rounded-full border-2 border-white group-hover:scale-125 transition-transform" />
-            </button>
-            <div className="h-12 w-12 rounded-2xl overflow-hidden border-2 border-slate-50 ml-2 shadow-sm">
-               {user?.fullName ? (
-                  <div className="h-full w-full flex items-center justify-center bg-primary text-white font-black text-xl">
-                    {user.fullName.charAt(0)}
-                  </div>
-               ) : (
-                  <div className="h-full w-full flex items-center justify-center bg-slate-50 text-slate-300">
-                    <UserIcon className="h-6 w-6" />
-                  </div>
-               )}
-            </div>
-          </div>
         </div>
-      </header>
+      </div>
 
       <main className="flex-1 bg-[#F9F5EE]">
         <div className="max-w-[1200px] w-full mx-auto px-4 py-10 sm:px-6 lg:px-8">
@@ -341,7 +323,9 @@ export default function CommunityFeed() {
                         <Search className="h-12 w-12 mx-auto text-primary/40" />
                         <h3 className="text-2xl font-black text-[#1A2E05] tracking-tight">No active stories found</h3>
                         <p className="text-slate-400 text-sm font-medium leading-[1.6]">Adjust your filters or be the first to start a conversation in this wellness domain.</p>
-                        <Button variant="outline" onClick={() => { setCategory('all'); setSearch(''); }} className="mt-2 rounded-2xl h-12 px-8 font-black uppercase tracking-widest text-xs">Reset Alignment</Button>
+                        <Button variant="outline" className="mt-2 rounded-2xl h-12 px-8 font-black uppercase tracking-widest text-xs" onClick={() => { setCategory('all'); setSearch(''); }}>
+                          Reset Alignment
+                        </Button>
                       </div>
                     )}
                   </div>

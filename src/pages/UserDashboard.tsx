@@ -159,29 +159,6 @@ export default function UserDashboard() {
           <aside className="space-y-6 lg:sticky lg:top-8">
             <NotificationPanel />
 
-            <div className="bg-white rounded-[2.5rem] p-6 border border-primary/5 shadow-sm space-y-4">
-              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Quick Actions</p>
-              <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-sm font-bold" asChild>
-                  <Link to="/products"><ShoppingCart className="h-4 w-4" /> Browse Shop</Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-sm font-bold" asChild>
-                  <Link to="/community"><MessageSquare className="h-4 w-4" /> View Discussions</Link>
-                </Button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-[2.5rem] p-6 border border-primary/5 shadow-sm">
-              <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Topics to Follow</h4>
-              <div className="flex flex-wrap gap-2">
-                {['Nutrition', 'Mental Health', 'Yoga', 'BioHacking', 'Sleep'].map(topic => (
-                  <button key={topic} className="px-3 py-1.5 rounded-full bg-muted/50 text-[10px] font-bold hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-1">
-                    <Hash className="h-3 w-3" /> {topic}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="bg-[#1A2E05] text-white rounded-[2.5rem] p-6 border border-white/20 shadow-lg space-y-4">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Member Snapshot</p>
               <div className="flex items-center gap-3">
