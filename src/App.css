@@ -491,18 +491,21 @@
 
 .credential-input {
   width: 100%;
-  border: 1px solid rgba(79, 113, 83, 0.15);
-  border-radius: 1rem;
-  height: 3.2rem;
-  padding-left: 3rem;
-  background: #F2F2EF;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  transition: border-color 0.3s ease, background 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 1.5rem;
+  height: 3.4rem;
+  padding-left: 3.25rem;
+  padding-right: 1rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1E1E1E;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
 .credential-input:focus {
-  border-color: #4F7153;
-  background: #fff;
+  border-color: #7A9E7E;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(122, 158, 126, 0.25);
   outline: none;
 }
 
