@@ -158,6 +158,7 @@ export default function AdminDashboard() {
   const { data: products = [] } = useQuery({ queryKey: ['adminProducts'], queryFn: () => getAdminProducts(token!), enabled: !!token });
   const { data: comments = [] } = useQuery({ queryKey: ['adminComments'], queryFn: () => getAdminComments(token!), enabled: !!token });
   const { data: commissionRequests = [] } = useQuery({ queryKey: ['commission-requests'], queryFn: () => getAdminCommissionRequests(token!), enabled: !!token });
+  const { data: adminPartnerships = [] } = useQuery({ queryKey: ['adminPartnerships'], queryFn: () => getAdminPartnerships(token!), enabled: !!token });
   const [growthData, setGrowthData] = useState<GrowthPoint[]>(() => createInitialGrowth());
   const [mindfulMinutes, setMindfulMinutes] = useState(24);
   const [mindfulNote, setMindfulNote] = useState('Morning session ✓');
@@ -253,6 +254,11 @@ export default function AdminDashboard() {
   const brandStatusMutation = useMutation({ mutationFn: ({id, status}: {id: string, status: string}) => reviewBrandStatus(token!, id, status), ...mutationOptions });
   const brandDeleteMutation = useMutation({ mutationFn: (id: string) => deleteAdminBrand(token!, id), ...mutationOptions });
 
+  const partnershipStatusMutation = useMutation({ 
+    mutationFn: ({id, status}: {id: string, status: string}) => updateAdminPartnershipStatus(token!, id, status), 
+    ...mutationOptions 
+  });
+
   const productStatusMutation = useMutation({ mutationFn: ({id, status}: {id: string, status: string}) => reviewProduct(token!, id, status), ...mutationOptions });
   const productDeleteMutation = useMutation({ mutationFn: (id: string) => deleteAdminProduct(token!, id), ...mutationOptions });
   
@@ -306,6 +312,12 @@ export default function AdminDashboard() {
   };
 
   const filteredUsers = users.filter(u => u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const pendingAffiliates = affiliates.filter(a => a.status === 'PENDING').length;
+  const pendingBrands = brands.filter(b => b.status === 'PENDING').length;
+  const pendingProducts = products.filter(p => p.status === 'PENDING').length;
+  const pendingPartnerships = adminPartnerships.filter(p => p.status === 'pending').length;
+  const totalPending = pendingAffiliates + pendingBrands + pendingProducts + pendingPartnerships;
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
@@ -478,6 +490,44 @@ export default function AdminDashboard() {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-10"
               >
+                {/* Pending Actions Alert */}
+                {totalPending > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="grid gap-4 md:grid-cols-4 mb-10"
+                  >
+                    <div className="md:col-span-4 bg-[#FEE2E2] border border-red-200 rounded-[2rem] p-8 flex items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-6">
+                        <div className="h-16 w-16 bg-white rounded-2xl flex items-center justify-center text-red-600 shadow-sm">
+                          <ShieldAlert className="h-8 w-8" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-black text-red-950 uppercase tracking-tight">Immediate Action Required</h3>
+                          <p className="text-sm font-medium text-red-800/80">You have {totalPending} pending applications awaiting verification across the ecosystem.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        {pendingAffiliates > 0 && (
+                          <Button variant="ghost" onClick={() => setActiveTab('partners')} className="bg-white/50 hover:bg-white text-red-900 rounded-xl font-black text-[10px] uppercase tracking-widest px-4">
+                            {pendingAffiliates} Affiliates
+                          </Button>
+                        )}
+                        {pendingBrands > 0 && (
+                          <Button variant="ghost" onClick={() => setActiveTab('partners')} className="bg-white/50 hover:bg-white text-red-900 rounded-xl font-black text-[10px] uppercase tracking-widest px-4">
+                            {pendingBrands} Brands
+                          </Button>
+                        )}
+                        {pendingProducts > 0 && (
+                          <Button variant="ghost" onClick={() => setActiveTab('marketplace')} className="bg-white/50 hover:bg-white text-red-900 rounded-xl font-black text-[10px] uppercase tracking-widest px-4">
+                            {pendingProducts} Products
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Stats Matrix */}
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                   {[
@@ -688,7 +738,7 @@ export default function AdminDashboard() {
                         {brands.map(b => (
                           <tr key={b.id} className="hover:bg-muted/10 transition-colors group">
                             <td className="px-8 py-6">
-                              <div className="font-black text-[#1A2E05]">{b.brandName || b.user.fullName}</div>
+                              <div className="font-black text-[#1A2E05]">{b.name || b.user.fullName}</div>
                               <div className="text-[11px] font-bold text-muted-foreground">{b.user.email}</div>
                             </td>
                             <td className="px-8 py-6">
@@ -776,6 +826,68 @@ export default function AdminDashboard() {
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive rounded-lg" onClick={() => affiliateDeleteMutation.mutate(a.id)}>
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Partnership Inquiries Section */}
+                <div className="bg-white rounded-[2.5rem] border border-border/50 shadow-sm overflow-hidden">
+                  <div className="p-8 border-b border-border/40 bg-purple-50/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                          <Globe className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-xl">Partnership Inquiries</h3>
+                          <p className="text-xs text-muted-foreground font-medium">Generic platform collaboration requests</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-0 overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-muted/10 border-b border-border/40">
+                          <th className="px-8 py-6 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">Partner</th>
+                          <th className="px-8 py-6 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">Details</th>
+                          <th className="px-8 py-6 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status</th>
+                          <th className="px-8 py-6 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40">
+                        {adminPartnerships.map(p => (
+                          <tr key={p.id} className="hover:bg-muted/10 transition-colors group">
+                            <td className="px-8 py-6">
+                              <div className="font-black text-[#1A2E05]">{p.organizationName}</div>
+                              <div className="text-[11px] font-bold text-muted-foreground">{p.email}</div>
+                            </td>
+                            <td className="px-8 py-6">
+                              <div className="text-xs font-medium text-muted-foreground line-clamp-1">{p.proposal}</div>
+                              <div className="text-[10px] font-bold text-primary mt-1">{p.contactPerson} • {p.phone}</div>
+                            </td>
+                            <td className="px-8 py-6">
+                              <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${
+                                p.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 
+                                p.status === 'rejected' ? 'bg-destructive/10 text-destructive' : 
+                                'bg-orange-50 text-orange-600'
+                              }`}>
+                                {p.status}
+                              </span>
+                            </td>
+                            <td className="px-8 py-6 text-right">
+                              <div className="flex justify-end gap-2">
+                                {p.status === 'pending' && (
+                                  <>
+                                    <Button size="sm" className="h-8 rounded-lg font-black text-[10px] bg-emerald-600 hover:bg-emerald-700" onClick={() => partnershipStatusMutation.mutate({id: p.id, status: 'approved'})}>Accept</Button>
+                                    <Button variant="outline" size="sm" className="h-8 rounded-lg font-black text-[10px] text-destructive border-destructive/20 hover:bg-destructive/10" onClick={() => partnershipStatusMutation.mutate({id: p.id, status: 'rejected'})}>Decline</Button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
