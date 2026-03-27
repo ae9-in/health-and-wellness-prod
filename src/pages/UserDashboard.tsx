@@ -7,7 +7,7 @@ import BackButton from '@/components/BackButton';
 import NotificationPanel from '@/components/NotificationPanel';
 import { getPosts, getSessions, getUserComments } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Calendar, Check, ArrowRight, Hash, ShoppingCart } from 'lucide-react';
+import { MessageSquare, Calendar, Check, ArrowRight, ShoppingCart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Post, UserCommentActivity } from '@/lib/types';
 
@@ -22,17 +22,23 @@ type DiscussionEntry = {
 export default function UserDashboard() {
   const { user, token } = useAuth();
   
-  if (!user) return <Navigate to="/login" />;
-  if (user.role !== 'USER' && user.role !== 'ADMIN') return null; // Safety check
-
   // Queries
-  const { data: posts = [] } = useQuery<Post[]>({ queryKey: ['posts'], queryFn: getPosts });
-  const { data: sessions = [] } = useQuery({ queryKey: ['sessions'], queryFn: getSessions });
+  const { data: posts = [] } = useQuery<Post[]>({ 
+    queryKey: ['posts'], 
+    queryFn: () => getPosts() 
+  });
+  const { data: sessions = [] } = useQuery({ 
+    queryKey: ['sessions'], 
+    queryFn: () => getSessions() 
+  });
   const { data: recentComments = [] } = useQuery<UserCommentActivity[]>({
     queryKey: ['user-comments'],
     queryFn: () => getUserComments(token!),
     enabled: !!token,
   });
+
+  if (!user) return <Navigate to="/login" />;
+  if (user.role !== 'USER' && user.role !== 'ADMIN') return null;
 
   const userPosts = posts.filter(p => p.authorId === user.id);
   const registeredSessions = sessions.filter(s => s.registeredUsers?.includes(user.id));
@@ -66,7 +72,6 @@ export default function UserDashboard() {
               <p className="text-muted-foreground text-lg font-medium">Welcome back, <span className="text-foreground font-bold">{user.fullName}</span>.</p>
               {user.city && <p className="text-xs font-bold text-muted-foreground mt-1 flex items-center gap-2">📍 {user.city} {user.age && <span>• {user.age} years old</span>}</p>}
             </div>
-
 
             {/* Discover Products */}
             <div className="bg-[#1A2E05] text-white rounded-[2.5rem] p-8 shadow-sm relative overflow-hidden group">

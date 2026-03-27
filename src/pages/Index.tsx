@@ -185,8 +185,8 @@ const FEATURE_GRADIENTS = [
 ];
 
 export default function Index() {
-  const { data: posts = [] } = useQuery({ queryKey: ['posts'], queryFn: getPosts });
-  const { data: sessions = [] } = useQuery({ queryKey: ['sessions'], queryFn: getSessions });
+  const { data: posts = [] } = useQuery({ queryKey: ['posts'], queryFn: () => getPosts() });
+  const { data: sessions = [] } = useQuery({ queryKey: ['sessions'], queryFn: () => getSessions() });
   const { data: featuredProducts = [], isLoading: productsLoading } = useQuery({
     queryKey: ['products', 'landing-highlight'],
     queryFn: () => getProducts({ popular: true })

@@ -30,7 +30,7 @@ export default function Discussions() {
 
   const { data: posts = [], isLoading } = useQuery({ 
     queryKey: ['posts', category, search], 
-    queryFn: () => getPosts() 
+    queryFn: () => getPosts(category, search) 
   });
 
   const mutationOptions = {
