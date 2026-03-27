@@ -1,8 +1,9 @@
 import type { Partnership, Post, Session, User, Role, UserCommentActivity, Product, AdminComment } from './types';
 
 const devDefault = 'http://localhost:5001/api';
+const prodDefault = 'https://health-and-wellness-prod.onrender.com/api';
 const normalizedEnvUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
-export const API_BASE = normalizedEnvUrl ?? (import.meta.env.DEV ? devDefault : '');
+export const API_BASE = normalizedEnvUrl || (import.meta.env.DEV ? devDefault : prodDefault);
 
 const buildUrl = (path: string) => `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
 
