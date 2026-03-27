@@ -61,7 +61,7 @@ model User {
 model Affiliate {
   id          String           @id @default(uuid()) @db.Uuid
   userId      String           @unique @db.Uuid
-  user        User             @relation(fields: [userId], references: [id])
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   status      ApprovalStatus   @default(PENDING)
   socialLinks Json?
   interests   String[]
@@ -77,7 +77,7 @@ model Affiliate {
 model Brand {
   id               String         @id @default(uuid()) @db.Uuid
   userId           String         @unique @db.Uuid
-  user             User           @relation(fields: [userId], references: [id])
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessCategory String
   contactPerson    String
   name             String         @default("Health Brand")
@@ -94,7 +94,7 @@ model Brand {
 model Product {
   id             String         @id @default(uuid()) @db.Uuid
   brandId        String         @db.Uuid
-  brand          Brand          @relation(fields: [brandId], references: [id])
+  brand          Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
   name           String
   category       String
   description    String
@@ -116,8 +116,8 @@ model AffiliateLink {
   productId   String    @db.Uuid
   url         String    @unique
   createdAt   DateTime  @default(now())
-  affiliate   Affiliate @relation(fields: [affiliateId], references: [id])
-  product     Product   @relation(fields: [productId], references: [id])
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 enum CommissionStatus {
@@ -143,8 +143,8 @@ model Commission {
   status        CommissionStatus @default(PENDING)
   payoutBatchId String?          @db.Uuid
   createdAt     DateTime         @default(now())
-  affiliate     Affiliate        @relation(fields: [affiliateId], references: [id])
-  product       Product          @relation(fields: [productId], references: [id])
+  affiliate     Affiliate        @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  product       Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
   payoutBatch   PayoutBatch?     @relation(fields: [payoutBatchId], references: [id])
 }
 
@@ -169,13 +169,13 @@ model Notification {
   metadata  Json?
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
-  user      User             @relation(fields: [userId], references: [id])
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AffiliateCoupon {
   id               String    @id @default(uuid()) @db.Uuid
   affiliateId      String    @unique @db.Uuid
-  affiliate        Affiliate @relation(fields: [affiliateId], references: [id])
+  affiliate        Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
   code             String    @unique
   commissionPercent Float     @default(20)
   enabled          Boolean   @default(true)
@@ -289,7 +289,7 @@ model Partnership {
 model CommissionRequest {
   id                  String           @id @default(uuid()) @db.Uuid
   affiliateId         String           @db.Uuid
-  affiliate           Affiliate        @relation(fields: [affiliateId], references: [id])
+  affiliate           Affiliate        @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
   currentCommission   Float
   requestedCommission Float
   reason              String
