@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma';
+import { ensureAffiliateCoupon } from '../lib/coupon';
 import { Role, ApprovalStatus } from '@prisma/client';
 import { getAdminCredentials } from '../lib/adminConfig';
 
@@ -49,7 +50,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
     });
 
     if (role === Role.AFFILIATE) {
-      await prisma.affiliate.create({
+      const affiliate = await prisma.affiliate.create({
         data: {
           userId: user.id,
           status: ApprovalStatus.PENDING,
@@ -57,6 +58,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
           interests: Array.isArray(interests) ? interests : [],
         },
       });
+      await ensureAffiliateCoupon({ affiliateId: affiliate.id, baseName: fullName });
     }
 
     if (role === Role.BRAND) {

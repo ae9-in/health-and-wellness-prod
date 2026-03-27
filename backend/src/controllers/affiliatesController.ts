@@ -41,7 +41,7 @@ export async function getAffiliateDashboard(req: AuthRequest, res: Response): Pr
 
     const affiliate = await prisma.affiliate.findUnique({
       where: { userId },
-      include: { commissions: true, affiliateLinks: true },
+      include: { commissions: true, affiliateLinks: true, coupon: true },
     });
 
     if (!affiliate) {
@@ -63,6 +63,15 @@ export async function getAffiliateDashboard(req: AuthRequest, res: Response): Pr
         totalSales,
         conversionRate,
       },
+      coupon: affiliate.coupon
+        ? {
+            code: affiliate.coupon.code,
+            commissionPercent: affiliate.coupon.commissionPercent,
+            enabled: affiliate.coupon.enabled,
+            usesCount: affiliate.coupon.usesCount,
+            totalRevenue: affiliate.coupon.totalRevenue,
+          }
+        : null,
     });
   } catch (error) {
     console.error('Affiliate dashboard error:', error);

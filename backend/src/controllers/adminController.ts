@@ -3,6 +3,7 @@ import { Role, ApprovalStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import prisma from '../lib/prisma';
 import { requireAdminCredentials } from '../lib/adminConfig';
+import { ensureAffiliateCoupon, regenerateAffiliateCoupon } from '../lib/coupon';
 
 // Create a new user (admin)
 export async function createUser(req: Request, res: Response): Promise<void> {
@@ -35,9 +36,10 @@ export async function createUser(req: Request, res: Response): Promise<void> {
 
     // Auto-create affiliate/brand profile if applicable
     if (role === 'AFFILIATE') {
-      await prisma.affiliate.create({
+      const affiliate = await prisma.affiliate.create({
         data: { userId: user.id, status: ApprovalStatus.PENDING },
       });
+      await ensureAffiliateCoupon({ affiliateId: affiliate.id, baseName: fullName });
     }
     if (role === 'BRAND') {
       await prisma.brand.create({
@@ -341,5 +343,89 @@ export async function togglePostSponsored(req: Request, res: Response): Promise<
   } catch (error) {
     console.error('Toggle post sponsored error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+export async function listAffiliateCoupons(_req: Request, res: Response): Promise<void> {
+  try {
+    const coupons = await prisma.affiliateCoupon.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        affiliate: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    res.json({ coupons });
+  } catch (error) {
+    console.error('List affiliate coupons error:', error);
+    res.status(500).json({ error: 'Unable to list affiliate coupons' });
+  }
+}
+
+export async function updateAffiliateCoupon(req: Request, res: Response): Promise<void> {
+  try {
+    const { affiliateId } = req.params;
+    const { code, commissionPercent, enabled, usageLimit, expiresAt } = req.body;
+
+    const updates: any = {};
+    if (code) {
+      const normalized = code.replace(/[^a-z0-9]/gi, '').toUpperCase();
+      if (!normalized) {
+        res.status(400).json({ error: 'Coupon code must contain alphanumeric characters' });
+        return;
+      }
+      const existing = await prisma.affiliateCoupon.findUnique({ where: { code: normalized } });
+      if (existing && existing.affiliateId !== affiliateId) {
+        res.status(409).json({ error: 'Coupon code already in use' });
+        return;
+      }
+      updates.code = normalized;
+    }
+    if (commissionPercent !== undefined) updates.commissionPercent = Number(commissionPercent);
+    if (typeof enabled === 'boolean') updates.enabled = enabled;
+    if (usageLimit !== undefined) updates.usageLimit = Number(usageLimit);
+    if (expiresAt) updates.expiresAt = new Date(expiresAt);
+
+    const coupon = await prisma.affiliateCoupon.update({
+      where: { affiliateId },
+      data: updates,
+    });
+
+    res.json({ coupon });
+  } catch (error) {
+    console.error('Update affiliate coupon error:', error);
+    res.status(500).json({ error: 'Unable to update coupon' });
+  }
+}
+
+export async function regenerateAffiliateCouponHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const { affiliateId } = req.params;
+    const affiliate = await prisma.affiliate.findUnique({
+      where: { id: affiliateId },
+      include: { user: true },
+    });
+    if (!affiliate || !affiliate.user) {
+      res.status(404).json({ error: 'Affiliate not found' });
+      return;
+    }
+    const existing = await prisma.affiliateCoupon.findUnique({ where: { affiliateId } });
+    if (!existing) {
+      await ensureAffiliateCoupon({ affiliateId, baseName: affiliate.user.fullName });
+    }
+    const updated = await regenerateAffiliateCoupon(affiliateId, affiliate.user.fullName);
+    res.json({ coupon: updated });
+  } catch (error) {
+    console.error('Regenerate affiliate coupon error:', error);
+    res.status(500).json({ error: 'Unable to regenerate coupon' });
   }
 }

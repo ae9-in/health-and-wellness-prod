@@ -1,6 +1,8 @@
 import type { Partnership, Post, Session, User, Role, UserCommentActivity, Product, AdminComment } from './types';
 
-export const API_BASE = (import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api').replace(/\/$/, '');
+const devDefault = 'http://localhost:5001/api';
+const normalizedEnvUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
+export const API_BASE = normalizedEnvUrl ?? (import.meta.env.DEV ? devDefault : '');
 
 const buildUrl = (path: string) => `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
 
@@ -11,7 +13,13 @@ async function request<T>(path: string, options: RequestInit = {}, token?: strin
     ...(bodyIsFormData ? {} : { 'Content-Type': 'application/json' }),
   };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(buildUrl(path), { ...options, headers });
+  let res: Response;
+  try {
+    res = await fetch(buildUrl(path), { ...options, headers });
+  } catch (error) {
+    console.error('Network request failed:', error);
+    throw new Error('Unable to reach the API server. Please verify the backend is running and accessible.');
+  }
   const text = await res.text();
   const data = text ? JSON.parse(text) : {};
   if (!res.ok) {
@@ -67,6 +75,10 @@ export async function getPosts(category?: string, search?: string) {
   const queryString = params.toString();
   if (queryString) url += `?${queryString}`;
   return request<Post[]>(url);
+}
+
+export async function getAffiliateDashboard(token: string) {
+  return request<any>('/affiliates/dashboard', { method: 'GET' }, token);
 }
 
 export async function createPost(token: string, payload: any) {

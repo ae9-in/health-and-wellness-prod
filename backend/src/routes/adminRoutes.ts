@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createUser, getAllUsers, toggleBlockUser, deleteUser, getDashboardStats, getAllPayments, updatePost, deletePost, createAdminPost, togglePostSponsored, getAllComments, deleteAdminComment } from '../controllers/adminController';
+import { createUser, getAllUsers, toggleBlockUser, deleteUser, getDashboardStats, getAllPayments, updatePost, deletePost, createAdminPost, togglePostSponsored, getAllComments, deleteAdminComment, listAffiliateCoupons, updateAffiliateCoupon, regenerateAffiliateCouponHandler } from '../controllers/adminController';
 import { createSession, updateSession, deleteSession } from '../controllers/sessionController';
 import { getPartnerships, updatePartnershipStatus, updatePartnership, deletePartnership } from '../controllers/partnershipController';
 import { listAffiliateApplications, reviewAffiliate, listBrandApplications, reviewBrand, listAdminProducts, reviewProduct, deleteAdminProduct, deleteBrand, deleteAffiliate } from '../controllers/approvalController';
@@ -39,6 +39,9 @@ router.delete('/posts/:postId', deletePost);
 
 router.get('/affiliates/applications', listAffiliateApplications);
 router.patch('/affiliates/:affiliateId/status', reviewAffiliate);
+router.get('/affiliates/coupons', listAffiliateCoupons);
+router.patch('/affiliates/:affiliateId/coupon', updateAffiliateCoupon);
+router.post('/affiliates/:affiliateId/coupon/regenerate', regenerateAffiliateCouponHandler);
 router.get('/brands/applications', listBrandApplications);
 router.patch('/brands/:brandId/status', reviewBrand);
 

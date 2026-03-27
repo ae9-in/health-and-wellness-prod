@@ -22,8 +22,9 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getProducts } from '@/lib/api';
+import { getProducts, getAffiliateDashboard } from '@/lib/api';
 import { CATEGORIES } from '@/lib/constants';
 import type { Product } from '@/lib/types';
 
@@ -37,6 +38,11 @@ export default function AffiliateDashboard() {
   const [filters, setFilters] = useState({
     search: '',
     category: '',
+  });
+  const { data: affiliateData } = useQuery({
+    queryKey: ['affiliate-dashboard'],
+    queryFn: () => getAffiliateDashboard(token!),
+    enabled: !!token,
   });
 
   useEffect(() => {
@@ -110,17 +116,46 @@ export default function AffiliateDashboard() {
     );
   }
 
-  const referralLink = `https://wellnest.community/join?ref=${user.id}`;
+  const couponCode = affiliateData?.coupon?.code ?? '';
   const monthlyProjected = (parseFloat(commission) / 100) * parseFloat(sales) * parseFloat(avgPrice);
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(referralLink);
-    toast.success('Referral link copied to clipboard!');
+  const copyCouponCode = () => {
+    if (!couponCode) {
+      toast.error('Coupon code is not available yet.');
+      return;
+    }
+    navigator.clipboard.writeText(couponCode);
+    toast.success('Coupon code copied!');
+  };
+
+  const shareCouponCode = async () => {
+    if (!couponCode) {
+      toast.error('Coupon code is not available yet.');
+      return;
+    }
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Health & Wellness coupon',
+          text: `Use coupon ${couponCode} to save on wellness gear.`,
+        });
+      } catch {
+        // share cancelled
+      }
+    } else {
+      toast('Sharing is not supported on this device. Copy the code manually.');
+    }
   };
 
   const clearFilters = () => {
     setFilters({ search: '', category: '' });
   };
+
+  useEffect(() => {
+    if (affiliateData?.coupon?.commissionPercent !== undefined) {
+      setCommission(String(affiliateData.coupon.commissionPercent));
+    }
+  }, [affiliateData?.coupon?.commissionPercent]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FDFDFB]">
@@ -189,19 +224,22 @@ export default function AffiliateDashboard() {
                   </div>
                   
                   <div className="flex-1 flex flex-col justify-center">
-                    <h3 className="text-3xl font-bold mb-6 leading-tight">Share your journey and earn 20% commission on every sale.</h3>
-                    <p className="text-white/60 mb-8 text-lg">Use your unique link across social platforms to track your impact and rewards.</p>
+                    <h3 className="text-3xl font-bold mb-6 leading-tight">The outcome varies based on the number of units sold.</h3>
+                    <p className="text-white/60 mb-8 text-lg">Use your unique coupon code across social platforms to track your impact and rewards.</p>
                   </div>
 
                   <div className="mt-auto space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/50">Your Unique Referral Link</label>
-                    <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/10 shadow-inner group hover:bg-white/10 transition-colors">
-                      <span className="flex-1 px-3 font-mono text-sm overflow-hidden text-ellipsis whitespace-nowrap text-white/90">
-                        {referralLink}
-                      </span>
-                      <Button onClick={copyLink} variant="secondary" size="lg" className="rounded-xl font-bold px-6 shadow-lg shadow-black/20 group-hover:scale-105 transition-transform">
-                        Copy Link
-                      </Button>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/50">Your Unique Coupon Code</label>
+                    <div className="bg-white/5 border border-white/10 shadow-inner rounded-2xl p-5 space-y-3">
+                      <p className="text-2xl font-mono tracking-[0.4em] text-white/80">{couponCode || 'Generating...'}</p>
+                      <div className="flex flex-wrap gap-3">
+                        <Button onClick={copyCouponCode} variant="secondary" className="rounded-xl font-bold px-6 py-3 shadow-lg shadow-black/20">
+                          Copy Code
+                        </Button>
+                        <Button variant="ghost" className="rounded-xl font-bold px-6 py-3 text-white border border-white/40" onClick={shareCouponCode}>
+                          Share Code
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
