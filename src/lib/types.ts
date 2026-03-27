@@ -38,6 +38,8 @@ export interface User {
   status?: ApprovalStatus;
   blocked: boolean;
   subscriptionStatus?: string;
+  subscriptionPlan?: string;
+  subscriptionExpiry?: string;
   createdAt: string;
 }
 
@@ -113,4 +115,14 @@ export interface AdminComment {
   userEmail: string;
   postId: string;
   postTitle: string;
+}
+export interface Payment {
+  id: string;
+  userId: string;
+  user?: User;
+  amount: number;
+  plan: string;
+  paymentStatus: string;
+  transactionId: string;
+  createdAt: string;
 }

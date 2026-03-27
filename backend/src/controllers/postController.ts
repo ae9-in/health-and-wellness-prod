@@ -271,7 +271,7 @@ export async function getAuthors(req: Request, res: Response): Promise<void> {
   try {
     const authors = await prisma.user.findMany({
       where: {
-        role: { in: ['ADMIN', 'EXPERT', 'AFFILIATE'] },
+        role: { in: ['ADMIN', 'EXPERT', 'AFFILIATE', 'BRAND'] },
         blocked: false
       },
       select: { id: true, fullName: true, role: true },

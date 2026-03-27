@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../lib/prisma';
 import { AuthRequest } from '../middlewares/authMiddleware';
+import { getNextPayoutDate } from '../utils/payoutUtils';
 
 export async function submitAffiliateProfile(req: AuthRequest, res: Response): Promise<void> {
   const userId = req.userId;
@@ -39,29 +40,86 @@ export async function getAffiliateDashboard(req: AuthRequest, res: Response): Pr
       return;
     }
 
-    const affiliate = await prisma.affiliate.findUnique({
+    let affiliate = await (prisma.affiliate as any).findUnique({
       where: { userId },
-      include: { commissions: true, affiliateLinks: true, coupon: true },
+      include: { 
+        commissions: {
+          include: { product: true }
+        }, 
+        affiliateLinks: true, 
+        coupon: true, 
+        user: true,
+        commissionRequests: {
+          where: { status: 'PENDING' },
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      },
     });
+
+    // Fetch Last Payout Batch
+    const lastPayout = await (prisma as any).payoutBatch.findFirst({
+      where: { affiliateId: affiliate?.id, status: 'PAID' },
+      orderBy: { payoutDate: 'desc' }
+    });
+
+    const nextPayoutDate = getNextPayoutDate();
 
     if (!affiliate) {
       res.status(404).json({ error: 'Affiliate not found' });
       return;
     }
 
-    const totalEarnings = affiliate.commissions.reduce((sum, item) => sum + item.amount, 0);
-    const totalSales = affiliate.commissions.reduce((sum, item) => sum + item.salesCount, 0);
+    // Lazy create coupon if approved but missing
+    if (affiliate.status === 'APPROVED' && !affiliate.coupon) {
+      const { ensureAffiliateCoupon } = require('../lib/coupon');
+      await ensureAffiliateCoupon({ 
+        affiliateId: affiliate.id, 
+        baseName: (affiliate as any).user.fullName 
+      });
+      // Re-fetch to get the coupon
+      affiliate = await prisma.affiliate.findUnique({
+        where: { userId },
+        include: { 
+          commissions: true, 
+          affiliateLinks: true, 
+          coupon: true, 
+          user: true,
+          commissionRequests: {
+            where: { status: 'PENDING' },
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
+        },
+      }) as any;
+    }
+
+    const totalEarnings = (affiliate as any).commissions.reduce((sum: number, item: any) => sum + item.amount, 0);
+    const totalSales = (affiliate as any).commissions.reduce((sum: number, item: any) => sum + item.salesCount, 0);
     const conversionRate = affiliate.affiliateLinks.length ? Math.min(100, Math.round((totalSales / affiliate.affiliateLinks.length) * 100)) : 0;
-    const pendingEarnings = totalEarnings * 0.25;
+    
+    // Sum of commissions that are APPROVED but not yet PAID (status PENDING or APPROVED)
+    // Actually, user said only "approved" earnings are eligible.
+    const pendingPayoutAmount = (affiliate as any).commissions
+      .filter((c: any) => c.status === 'APPROVED')
+      .reduce((sum: number, item: any) => sum + item.amount, 0);
 
     res.json({
       status: affiliate.status,
       interests: affiliate.interests || [],
+      customCommission: (affiliate as any).customCommission,
+      activeRequest: (affiliate as any).commissionRequests?.[0] || null,
       earnings: {
         total: totalEarnings,
-        pending: pendingEarnings,
+        pending: pendingPayoutAmount,
         totalSales,
+        totalRevenue: (affiliate as any).coupon?.totalRevenue || 0,
         conversionRate,
+        nextPayoutDate: nextPayoutDate.toISOString(),
+        lastPayout: lastPayout ? {
+          amount: lastPayout.totalAmount,
+          date: lastPayout.payoutDate.toISOString()
+        } : null
       },
       coupon: affiliate.coupon
         ? {
@@ -108,5 +166,42 @@ export async function getAffiliateNotifications(req: AuthRequest, res: Response)
   } catch (error) {
     console.error('Affiliate notifications error:', error);
     res.status(500).json({ error: 'Unable to fetch notifications' });
+  }
+}
+
+export async function createCommissionRequest(req: AuthRequest, res: Response): Promise<void> {
+  const userId = req.userId;
+  try {
+    const affiliate = await prisma.affiliate.findUnique({ where: { userId } });
+    if (!affiliate) {
+      res.status(404).json({ error: 'Affiliate not found' });
+      return;
+    }
+
+    const { requestedCommission, reason, currentCommission } = req.body;
+
+    // Check for pending requests
+    const pending = await (prisma as any).commissionRequest.findFirst({
+      where: { affiliateId: affiliate.id, status: 'PENDING' }
+    });
+    if (pending) {
+      res.status(400).json({ error: 'You already have a pending commission request' });
+      return;
+    }
+
+    const request = await (prisma as any).commissionRequest.create({
+      data: {
+        affiliateId: affiliate.id,
+        currentCommission: Number(currentCommission),
+        requestedCommission: Number(requestedCommission),
+        reason,
+        status: 'PENDING'
+      }
+    });
+
+    res.json({ request });
+  } catch (error) {
+    console.error('Create commission request error:', error);
+    res.status(500).json({ error: 'Unable to create commission request' });
   }
 }

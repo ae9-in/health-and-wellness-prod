@@ -12,9 +12,20 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CreatePostModal from '@/components/CreatePostModal';
+import { getAuthorPosts } from '@/lib/api';
+import FeedPost from '@/components/FeedPost';
+
 
 export default function BrandDashboard() {
   const { user, token } = useAuth();
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const { data: authorPosts = [], refetch: refetchPosts } = useQuery({
+    queryKey: ['authorPosts', user?.id],
+    queryFn: () => getAuthorPosts(user!.id),
+    enabled: !!token && !!user?.id
+  });
+
   const [activeTab, setActiveTab] = useState('inventory');
   
   const { data: products = [], isLoading: loadingProducts } = useQuery({ 
@@ -219,7 +230,51 @@ export default function BrandDashboard() {
                   <Button className="rounded-2xl h-14 px-10 font-black shadow-xl shadow-primary/20">Contact Partnership Exec</Button>
                 </motion.div>
               </TabsContent>
+              <TabsContent value="community" className="m-0 focus-visible:ring-0">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-bold font-display">Your Community Presence</h3>
+                      <p className="text-sm text-muted-foreground">Manage your articles, success stories, and wellness tips.</p>
+                    </div>
+                    <Button 
+                      onClick={() => setIsPostModalOpen(true)}
+                      className="rounded-2xl h-12 px-6 font-bold shadow-lg shadow-primary/20 bg-[#1A2E05] hover:bg-[#25300c]"
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Create New Post
+                    </Button>
+                  </div>
+                  
+                  {authorPosts.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {authorPosts.map((post: any) => (
+                        <div key={post.id} className="bg-white rounded-[2.5rem] border border-primary/5 shadow-sm p-4">
+                           <FeedPost post={post} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-primary/10">
+                      <Globe className="h-12 w-12 text-primary/30 mx-auto mb-4" />
+                      <h4 className="text-xl font-bold mb-2">No posts yet</h4>
+                      <p className="text-muted-foreground mb-8">Start building your brand authority in the community.</p>
+                      <Button onClick={() => setIsPostModalOpen(true)} variant="secondary" className="rounded-2xl font-bold">
+                        Create Your First Post
+                      </Button>
+                    </div>
+                  )}
+                </motion.div>
+              </TabsContent>
             </Tabs>
+            <CreatePostModal 
+              isOpen={isPostModalOpen}
+              onOpenChange={setIsPostModalOpen}
+              onSuccess={refetchPosts}
+            />
           </div>
 
           <aside className="space-y-8 lg:sticky lg:top-8">
@@ -228,6 +283,15 @@ export default function BrandDashboard() {
             <div className="bg-white rounded-[3rem] p-6 border border-primary/5 shadow-sm space-y-4">
               <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Quick Actions</p>
               <div className="space-y-3">
+                <Button 
+                  onClick={() => {
+                    setActiveTab('community');
+                    setIsPostModalOpen(true);
+                  }}
+                  className="w-full justify-start gap-2 rounded-xl text-sm font-bold bg-primary/10 text-primary hover:bg-primary/20"
+                >
+                  <Globe className="h-4 w-4" /> Create New Post
+                </Button>
                 <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-sm font-bold" asChild>
                   <Link to="/reports"><BarChart3 className="h-4 w-4" /> View Reports</Link>
                 </Button>

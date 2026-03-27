@@ -36,7 +36,9 @@ export default function PaymentPage() {
       return;
     }
 
-    createPayment(localStorage.getItem('token')!, {
+    const token = localStorage.getItem('wellnest_token');
+    if (!token) return;
+    createPayment(token, {
       amount,
       plan,
       paymentStatus: 'success',

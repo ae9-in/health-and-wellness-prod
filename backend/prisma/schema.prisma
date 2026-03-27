@@ -70,6 +70,8 @@ model Affiliate {
   commissions Commission[]
   affiliateLinks AffiliateLink[]
   coupon AffiliateCoupon?
+  customCommission Float?
+  commissionRequests CommissionRequest[]
 }
 
 model Brand {
@@ -118,15 +120,45 @@ model AffiliateLink {
   product     Product   @relation(fields: [productId], references: [id])
 }
 
+enum CommissionStatus {
+  PENDING
+  APPROVED
+  PROCESSING
+  PAID
+  REJECTED
+}
+
+enum PayoutStatus {
+  SCHEDULED
+  PROCESSING
+  PAID
+}
+
 model Commission {
-  id          String    @id @default(uuid()) @db.Uuid
-  affiliateId String    @db.Uuid
-  productId   String    @db.Uuid
-  salesCount  Int
-  amount      Float
-  createdAt   DateTime  @default(now())
-  affiliate   Affiliate @relation(fields: [affiliateId], references: [id])
-  product     Product   @relation(fields: [productId], references: [id])
+  id            String           @id @default(uuid()) @db.Uuid
+  affiliateId   String           @db.Uuid
+  productId     String           @db.Uuid
+  salesCount    Int
+  amount        Float
+  status        CommissionStatus @default(PENDING)
+  payoutBatchId String?          @db.Uuid
+  createdAt     DateTime         @default(now())
+  affiliate     Affiliate        @relation(fields: [affiliateId], references: [id])
+  product       Product          @relation(fields: [productId], references: [id])
+  payoutBatch   PayoutBatch?     @relation(fields: [payoutBatchId], references: [id])
+}
+
+model PayoutBatch {
+  id          String       @id @default(uuid()) @db.Uuid
+  affiliateId String       @db.Uuid
+  totalAmount Float
+  startDate   DateTime
+  endDate     DateTime
+  payoutDate  DateTime
+  status      PayoutStatus @default(SCHEDULED)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  commissions Commission[]
 }
 
 model Notification {
@@ -253,4 +285,15 @@ model Partnership {
   status           String   @default("pending") // pending, approved, rejected
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+model CommissionRequest {
+  id                  String           @id @default(uuid()) @db.Uuid
+  affiliateId         String           @db.Uuid
+  affiliate           Affiliate        @relation(fields: [affiliateId], references: [id])
+  currentCommission   Float
+  requestedCommission Float
+  reason              String
+  status              ApprovalStatus   @default(PENDING)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 }

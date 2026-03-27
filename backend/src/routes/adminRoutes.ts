@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createUser, getAllUsers, toggleBlockUser, deleteUser, getDashboardStats, getAllPayments, updatePost, deletePost, createAdminPost, togglePostSponsored, getAllComments, deleteAdminComment, listAffiliateCoupons, updateAffiliateCoupon, regenerateAffiliateCouponHandler } from '../controllers/adminController';
+import { createUser, getAllUsers, toggleBlockUser, deleteUser, getDashboardStats, getAllPayments, updatePost, deletePost, createAdminPost, togglePostSponsored, getAllComments, deleteAdminComment, listAffiliateCoupons, updateAffiliateCoupon, regenerateAffiliateCouponHandler, listCommissionRequests, updateCommissionRequestStatus, listPendingCommissions, approveCommission, listPayoutBatches, createPayoutBatch, updatePayoutStatus } from '../controllers/adminController';
 import { createSession, updateSession, deleteSession } from '../controllers/sessionController';
 import { getPartnerships, updatePartnershipStatus, updatePartnership, deletePartnership } from '../controllers/partnershipController';
 import { listAffiliateApplications, reviewAffiliate, listBrandApplications, reviewBrand, listAdminProducts, reviewProduct, deleteAdminProduct, deleteBrand, deleteAffiliate } from '../controllers/approvalController';
@@ -42,6 +42,8 @@ router.patch('/affiliates/:affiliateId/status', reviewAffiliate);
 router.get('/affiliates/coupons', listAffiliateCoupons);
 router.patch('/affiliates/:affiliateId/coupon', updateAffiliateCoupon);
 router.post('/affiliates/:affiliateId/coupon/regenerate', regenerateAffiliateCouponHandler);
+router.get('/affiliates/commission-requests', listCommissionRequests);
+router.patch('/affiliates/commission-requests/:requestId', updateCommissionRequestStatus);
 router.get('/brands/applications', listBrandApplications);
 router.patch('/brands/:brandId/status', reviewBrand);
 
@@ -53,5 +55,12 @@ router.delete('/products/:productId', deleteAdminProduct);
 router.patch('/posts/:postId/sponsored', togglePostSponsored);
 router.get('/comments', getAllComments);
 router.delete('/comments/:commentId', deleteAdminComment);
+
+// Payouts & Commissions management
+router.get('/commissions/pending', listPendingCommissions);
+router.patch('/commissions/:commissionId/status', approveCommission);
+router.get('/payouts/batches', listPayoutBatches);
+router.post('/payouts/batches', createPayoutBatch);
+router.patch('/payouts/batches/:batchId/status', updatePayoutStatus);
 
 export default router;

@@ -33,7 +33,12 @@ export default function ProductDetails() {
   const handlePaymentSuccess = async () => {
     if (!product) return;
     try {
-      await createPayment(localStorage.getItem('token')!, {
+      const token = localStorage.getItem('wellnest_token');
+      if (!token) {
+        toast.error('You must be logged in to purchase');
+        return;
+      }
+      await createPayment(token, {
         amount: product.price,
         plan: `Product: ${product.name}`,
         paymentStatus: 'success',

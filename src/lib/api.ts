@@ -77,6 +77,10 @@ export async function getPosts(category?: string, search?: string) {
   return request<Post[]>(url);
 }
 
+export async function getAuthorPosts(authorId: string) {
+  return request<Post[]>(`/posts?authorId=${authorId}`);
+}
+
 export async function getAffiliateDashboard(token: string) {
   return request<any>('/affiliates/dashboard', { method: 'GET' }, token);
 }
@@ -290,4 +294,17 @@ export async function togglePostSponsored(token: string, postId: string) {
 
 export async function createPayment(token: string, payload: { amount: number; plan: string; paymentStatus: string; transactionId: string }) {
   return request<any>('/payments', { method: 'POST', body: JSON.stringify(payload) }, token);
+}
+
+export async function createCommissionRequest(token: string, payload: { requestedCommission: number; reason: string; currentCommission: number }) {
+  return request<any>('/affiliates/commission-request', { method: 'POST', body: JSON.stringify(payload) }, token);
+}
+
+export async function getAdminCommissionRequests(token: string) {
+  const data = await request<{ requests: any[] }>('/admin/affiliates/commission-requests', { method: 'GET' }, token);
+  return data.requests;
+}
+
+export async function updateAdminCommissionRequest(token: string, requestId: string, payload: { status: string; requestedCommission?: number }) {
+  return request<any>(`/admin/affiliates/commission-requests/${requestId}`, { method: 'PATCH', body: JSON.stringify(payload) }, token);
 }

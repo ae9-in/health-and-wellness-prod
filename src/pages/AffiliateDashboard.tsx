@@ -19,12 +19,34 @@ import {
   ShieldCheck,
   Search,
   FilterX,
-  Loader2
+  Loader2,
+  HelpCircle,
+  Calendar,
+  Globe,
+  PlusCircle
 } from 'lucide-react';
+import CreatePostModal from '@/components/CreatePostModal';
+import FeedPost from '@/components/FeedPost';
+import { getAuthorPosts } from '@/lib/api';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getProducts, getAffiliateDashboard } from '@/lib/api';
+import { getProducts, getAffiliateDashboard, createCommissionRequest } from '@/lib/api';
 import { CATEGORIES } from '@/lib/constants';
 import type { Product } from '@/lib/types';
 
@@ -39,10 +61,28 @@ export default function AffiliateDashboard() {
     search: '',
     category: '',
   });
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [requestedCommission, setRequestedCommission] = useState('20');
+  const [requestReason, setRequestReason] = useState('');
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
+
+  const calculateTieredCommission = (salesVal: number) => {
+    if (salesVal <= 10) return 10;
+    if (salesVal <= 30) return 15;
+    if (salesVal <= 50) return 20;
+    return 25;
+  };
   const { data: affiliateData } = useQuery({
     queryKey: ['affiliate-dashboard'],
     queryFn: () => getAffiliateDashboard(token!),
     enabled: !!token,
+  });
+
+  const { data: authorPosts = [], refetch: refetchPosts } = useQuery({
+    queryKey: ['authorPosts', user?.id],
+    queryFn: () => getAuthorPosts(user!.id),
+    enabled: !!token && !!user?.id
   });
 
   useEffect(() => {
@@ -120,24 +160,21 @@ export default function AffiliateDashboard() {
   const monthlyProjected = (parseFloat(commission) / 100) * parseFloat(sales) * parseFloat(avgPrice);
 
   const copyCouponCode = () => {
-    if (!couponCode) {
-      toast.error('Coupon code is not available yet.');
-      return;
-    }
-    navigator.clipboard.writeText(couponCode);
-    toast.success('Coupon code copied!');
+    const textToCopy = couponCode || `https://wellnest.community/join?ref=${user.id}`;
+    navigator.clipboard.writeText(textToCopy);
+    toast.success(`${couponCode ? 'Coupon code' : 'Referral link'} copied!`);
   };
 
   const shareCouponCode = async () => {
-    if (!couponCode) {
-      toast.error('Coupon code is not available yet.');
-      return;
-    }
+    const textToShare = couponCode 
+      ? `Use coupon ${couponCode} to save on wellness gear!` 
+      : `Check out Health & Wellness: https://wellnest.community/join?ref=${user.id}`;
+      
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Health & Wellness coupon',
-          text: `Use coupon ${couponCode} to save on wellness gear.`,
+          title: 'Health & Wellness',
+          text: textToShare,
         });
       } catch {
         // share cancelled
@@ -152,10 +189,41 @@ export default function AffiliateDashboard() {
   };
 
   useEffect(() => {
-    if (affiliateData?.coupon?.commissionPercent !== undefined) {
-      setCommission(String(affiliateData.coupon.commissionPercent));
+    // Priority: Custom Commission > Tiered Commission
+    if (affiliateData?.customCommission !== undefined && affiliateData?.customCommission !== null) {
+      setCommission(String(affiliateData.customCommission));
+    } else {
+      setCommission(String(calculateTieredCommission(parseInt(sales) || 0)));
     }
-  }, [affiliateData?.coupon?.commissionPercent]);
+  }, [sales, affiliateData?.customCommission]);
+
+  const handleCreateRequest = async () => {
+    if (!requestedCommission || !requestReason) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    const reqVal = parseFloat(requestedCommission);
+    if (isNaN(reqVal) || reqVal < 1 || reqVal > 50) {
+      toast.error('Commission must be between 1% and 50%');
+      return;
+    }
+
+    setIsSubmittingRequest(true);
+    try {
+      await createCommissionRequest(token!, {
+        requestedCommission: reqVal,
+        reason: requestReason,
+        currentCommission: parseFloat(commission)
+      });
+      toast.success('Commission request submitted successfully!');
+      setIsRequestModalOpen(false);
+      setRequestReason('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to submit request');
+    } finally {
+      setIsSubmittingRequest(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FDFDFB]">
@@ -185,10 +253,10 @@ export default function AffiliateDashboard() {
             {/* Top Stats Grid */}
             <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
               {[
-                { label: 'Total Earnings', value: '₹48,250', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { label: 'Pending Payout', value: '₹12,450', icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50' },
-                { label: 'Total Sales', value: '142', icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
-                { label: 'Conversion', value: '4.8%', icon: BarChart3, color: 'text-purple-600', bg: 'bg-purple-50' },
+                { label: 'Total Earnings', value: `₹${Math.floor(affiliateData?.earnings?.total || 0).toLocaleString()}`, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                { label: 'Pending Payout', value: `₹${Math.floor(affiliateData?.earnings?.pending || 0).toLocaleString()}`, icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50' },
+                { label: 'Total Sales', value: affiliateData?.earnings?.totalSales || '0', icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
+                { label: 'Conversion', value: `${affiliateData?.earnings?.conversionRate || 0}%`, icon: BarChart3, color: 'text-purple-600', bg: 'bg-purple-50' },
               ].map((s, i) => (
                 <motion.div
                   key={s.label}
@@ -229,15 +297,23 @@ export default function AffiliateDashboard() {
                   </div>
 
                   <div className="mt-auto space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/50">Your Unique Coupon Code</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                      {couponCode ? 'Your Unique Coupon Code' : 'Your Unique Referral Link'}
+                    </label>
                     <div className="bg-white/5 border border-white/10 shadow-inner rounded-2xl p-5 space-y-3">
-                      <p className="text-2xl font-mono tracking-[0.4em] text-white/80">{couponCode || 'Generating...'}</p>
+                      <p className={`text-white/80 ${couponCode ? 'text-2xl font-mono tracking-[0.4em]' : 'text-sm font-medium break-all'}`}>
+                        {couponCode || `https://wellnest.community/join?ref=${user.id}`}
+                      </p>
                       <div className="flex flex-wrap gap-3">
-                        <Button onClick={copyCouponCode} variant="secondary" className="rounded-xl font-bold px-6 py-3 shadow-lg shadow-black/20">
-                          Copy Code
+                        <Button 
+                          onClick={copyCouponCode} 
+                          variant="secondary" 
+                          className="rounded-xl font-bold px-6 py-3 shadow-lg shadow-black/20"
+                        >
+                          {couponCode ? 'Copy Code' : 'Copy Link'}
                         </Button>
                         <Button variant="ghost" className="rounded-xl font-bold px-6 py-3 text-white border border-white/40" onClick={shareCouponCode}>
-                          Share Code
+                          Share
                         </Button>
                       </div>
                     </div>
@@ -256,23 +332,55 @@ export default function AffiliateDashboard() {
 
                 <div className="grid grid-cols-2 gap-6 flex-1">
                   <div className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Commission (%)</label>
-                      <input
-                        type="number"
-                        className="w-full bg-[#FDFDFB] border border-primary/5 rounded-2xl px-5 py-4 font-bold text-lg shadow-inner focus:ring-2 focus:ring-primary outline-none transition-all"
-                        value={commission}
-                        onChange={e => setCommission(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Monthly Sales</label>
-                      <input
-                        type="number"
-                        className="w-full bg-[#FDFDFB] border border-primary/5 rounded-2xl px-5 py-4 font-bold text-lg shadow-inner focus:ring-2 focus:ring-primary outline-none transition-all"
-                        value={sales}
-                        onChange={e => setSales(e.target.value)}
-                      />
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Commission (%)</label>
+                          {affiliateData?.customCommission && (
+                            <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Custom Applied</span>
+                          )}
+                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  className="w-full bg-muted/20 border border-primary/5 rounded-2xl px-5 py-4 font-bold text-lg shadow-inner outline-none transition-all cursor-not-allowed opacity-80"
+                                  value={commission}
+                                  readOnly
+                                  disabled
+                                />
+                                <HelpCircle className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p className="text-xs font-medium">Commission is based on your sales performance</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <Button 
+                          variant="link" 
+                          size="sm" 
+                          className="h-6 p-0 text-[10px] font-bold text-primary hover:text-primary/80"
+                          onClick={() => {
+                            setRequestedCommission(String(calculateTieredCommission(parseInt(sales) || 0) + 5));
+                            setIsRequestModalOpen(true);
+                          }}
+                          disabled={!!affiliateData?.activeRequest}
+                        >
+                          {affiliateData?.activeRequest ? 'Request Pending...' : 'Request Custom Commission'}
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Monthly Sales</label>
+                        <input
+                          type="number"
+                          className="w-full bg-[#FDFDFB] border border-primary/5 rounded-2xl px-5 py-4 font-bold text-lg shadow-inner focus:ring-2 focus:ring-primary outline-none transition-all"
+                          value={sales}
+                          onChange={e => setSales(e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
                   
@@ -404,6 +512,41 @@ export default function AffiliateDashboard() {
                 )}
               </div>
             </div>
+            
+            {/* My Content Section */}
+            <div className="space-y-8 bg-white rounded-[3rem] p-8 md:p-12 border border-primary/5 shadow-sm">
+              <div className="flex items-center justify-between border-b border-primary/5 pb-8">
+                <div>
+                  <h2 className="font-display text-3xl font-bold text-[#1A2E05] tracking-tight">My Community Posts</h2>
+                  <p className="text-muted-foreground text-lg mt-1 font-medium">Sharing your wellness journey with the community.</p>
+                </div>
+                <Button 
+                  onClick={() => setIsCreatePostModalOpen(true)}
+                  className="rounded-2xl h-12 px-6 font-bold shadow-lg shadow-primary/20 bg-[#1A2E05] hover:bg-[#25300c]"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" /> Create New Post
+                </Button>
+              </div>
+
+              {authorPosts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {authorPosts.slice(0, 4).map((post: any) => (
+                    <div key={post.id} className="bg-[#FDFDFB] rounded-[2rem] border border-primary/5 p-4 shadow-inner">
+                      <FeedPost post={post} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-20 text-center bg-[#FDFDFB] rounded-[3rem] border-2 border-dashed border-primary/10 shadow-inner">
+                  <Globe className="h-12 w-12 text-primary/30 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold mb-2">Build your authority</h3>
+                  <p className="text-muted-foreground mb-10 max-w-sm mx-auto">Create wellness articles or success stories to inspire others and boost your affiliate profile.</p>
+                  <Button onClick={() => setIsCreatePostModalOpen(true)} variant="secondary" className="rounded-2xl font-bold px-10 h-14">
+                    Create Your First Post
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
 
           <aside className="space-y-6 lg:sticky lg:top-8">
@@ -412,6 +555,12 @@ export default function AffiliateDashboard() {
             <div className="bg-white rounded-[2.5rem] p-6 border border-primary/5 shadow-sm space-y-4">
               <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Quick Actions</p>
               <div className="space-y-3">
+                <Button 
+                  onClick={() => setIsCreatePostModalOpen(true)}
+                  className="w-full justify-start gap-2 rounded-xl text-sm font-bold bg-[#1A2E05] hover:bg-[#2A4E05]"
+                >
+                  <PlusCircle className="h-4 w-4" /> Create New Post
+                </Button>
                 <Button variant="outline" className="w-full justify-start gap-2 rounded-xl text-sm font-bold" asChild>
                   <Link to="/products"><ShoppingBag className="h-4 w-4" /> Browse Shop</Link>
                 </Button>
@@ -422,24 +571,144 @@ export default function AffiliateDashboard() {
             </div>
 
             <div className="bg-[#1A2E05] text-white rounded-[2.5rem] p-6 border border-white/20 shadow-lg space-y-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Affiliate Snapshot</p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Affiliate Snapshot</p>
+                {affiliateData?.earnings?.totalSales !== undefined && (
+                  <div className="px-2 py-1 bg-white/10 rounded-md text-[9px] font-bold">
+                    {affiliateData.earnings.totalSales < 10 
+                      ? "Getting started" 
+                      : affiliateData.earnings.totalSales <= 50 
+                      ? "Good progress" 
+                      : "High performer"}
+                  </div>
+                )}
+              </div>
               <div className="space-y-2 text-sm">
                 <p className="font-bold text-lg">{user.fullName}</p>
-                <p className="text-white/80">Verified Partner</p>
-                <p className="text-white/80">Commission: 20%</p>
-                <p className="text-white/80">Active since 2024</p>
+                <div className="space-y-1">
+                  <p className="text-white/80 flex items-center gap-2">
+                    <ShieldCheck className="h-3 w-3" /> Verified Partner
+                  </p>
+                  <p className="text-white/60 text-xs italic leading-relaxed">
+                    {affiliateData?.earnings?.totalSales < 10
+                      ? "Getting started – increase your reach to boost earnings."
+                      : affiliateData?.earnings?.totalSales <= 50
+                      ? "Good progress – your impact is growing."
+                      : "High performer – strong conversion and earnings."}
+                  </p>
+                </div>
+                <div className="pt-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest opacity-50">Units Sold</p>
+                    <p className="font-bold">{affiliateData?.earnings?.totalSales || 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest opacity-50">Earnings</p>
+                    <p className="font-bold">₹{Math.floor(affiliateData?.earnings?.total || 0).toLocaleString()}</p>
+                  </div>
+                </div>
+                {affiliateData?.earnings?.nextPayoutDate && (
+                  <div className="pt-2 border-t border-white/10 mt-2">
+                    <p className="text-[9px] font-black uppercase tracking-widest opacity-50 flex items-center gap-1">
+                      <Calendar className="h-2 w-2" /> Next Payout
+                    </p>
+                    <p className="font-bold text-xs text-[#C1FF72]">
+                      {new Date(affiliateData.earnings.nextPayoutDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="bg-white/10 rounded-2xl p-3 flex items-center justify-between text-xs font-mono">
-                <span className="truncate">{`https://wellnest.community/join?ref=${user.id}`}</span>
-                <Button variant="ghost" className="text-white p-0 text-sm" onClick={() => { navigator.clipboard.writeText(referralLink); toast.success('Link copied!'); }}>
-                  Copy
-                </Button>
+              
+              <div className="space-y-2 pt-2">
+                <label className="text-[9px] font-black uppercase tracking-widest opacity-50">
+                  {couponCode ? "Your Coupon Code" : "Your Referral Link"}
+                </label>
+                <div className="bg-white/10 rounded-2xl p-3 flex items-center justify-between text-xs font-mono">
+                  <span className="truncate mr-2">
+                    {couponCode || `https://wellnest.community/join?ref=${user.id}`}
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    className="text-white p-0 h-auto text-sm font-bold hover:bg-transparent hover:text-primary transition-colors" 
+                    onClick={() => { 
+                      navigator.clipboard.writeText(couponCode || `https://wellnest.community/join?ref=${user.id}`); 
+                      toast.success(`${couponCode ? 'Coupon code' : 'Link'} copied!`); 
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </div>
               </div>
             </div>
           </aside>
         </div>
       </main>
+      <CreatePostModal 
+        isOpen={isCreatePostModalOpen}
+        onOpenChange={setIsCreatePostModalOpen}
+        onSuccess={refetchPosts}
+      />
       <Footer />
+
+
+      <Dialog open={isRequestModalOpen} onOpenChange={setIsRequestModalOpen}>
+        <DialogContent className="sm:max-w-[480px] rounded-[2rem] bg-[#0f2e1c] border-white/10 text-white z-[9999] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none rounded-[2rem]" />
+          <DialogHeader className="p-8 pb-4 relative z-10">
+            <DialogTitle className="text-3xl font-bold font-display text-white">Request Custom Commission</DialogTitle>
+            <DialogDescription className="text-white/60 text-base mt-2">
+              Empower your performance. Submit a request for a custom rate and our team will review it shortly.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-8 pt-0 space-y-6 relative z-10">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Requested Rate (%)</label>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 font-bold group-focus-within:text-[#C1FF72] transition-colors">%</div>
+                <Input
+                  type="number"
+                  value={requestedCommission}
+                  onChange={(e) => setRequestedCommission(e.target.value)}
+                  placeholder="e.g. 25"
+                  className="h-14 pl-10 rounded-2xl bg-white/5 border-white/10 text-white text-lg font-bold placeholder:text-white/20 focus-visible:ring-[#C1FF72] focus-visible:bg-white/10 transition-all outline-none"
+                />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Reasoning & Justification</label>
+              <Textarea
+                value={requestReason}
+                onChange={(e) => setRequestReason(e.target.value)}
+                placeholder="Share your marketing strategy or past performance highlights..."
+                className="min-h-[160px] rounded-2xl bg-white/5 border-white/10 text-white text-base placeholder:text-white/20 focus-visible:ring-[#C1FF72] focus-visible:bg-white/10 transition-all resize-none p-5 outline-none"
+              />
+            </div>
+          </div>
+          <DialogFooter className="p-8 pt-0 flex flex-col sm:flex-row gap-3 relative z-10">
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsRequestModalOpen(false)}
+              className="h-14 rounded-2xl font-bold text-white/60 hover:text-white hover:bg-white/5 order-2 sm:order-1"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateRequest}
+              disabled={isSubmittingRequest}
+              className="h-14 rounded-2xl font-bold px-10 bg-[#C1FF72] hover:bg-[#d4ff9a] text-[#0f2e1c] shadow-[0_0_20px_rgba(193,255,114,0.3)] order-1 sm:order-2 flex-1 transition-all active:scale-95"
+            >
+              {isSubmittingRequest ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Submit Proposal'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

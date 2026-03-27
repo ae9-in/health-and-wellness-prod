@@ -41,13 +41,16 @@ export default function NotificationBell() {
     if (!user) return;
 
     // Fetch initial notifications
-    getNotifications(localStorage.getItem('token')!)
-      .then(data => {
-        if (data.notifications) {
-          setNotifications(data.notifications);
-        }
-      })
-      .catch(err => console.error('Failed to fetch notifications:', err));
+    const storedToken = localStorage.getItem('wellnest_token');
+    if (storedToken) {
+      getNotifications(storedToken)
+        .then(data => {
+          if (data.notifications) {
+            setNotifications(data.notifications);
+          }
+        })
+        .catch(err => console.error('Failed to fetch notifications:', err));
+    }
 
     // Join room
     socket.emit('join', user.id);
@@ -66,7 +69,9 @@ export default function NotificationBell() {
 
   const markAsRead = async (id: string) => {
     try {
-      await markNotificationRead(localStorage.getItem('token')!, id);
+      const storedToken = localStorage.getItem('wellnest_token');
+      if (!storedToken) return;
+      await markNotificationRead(storedToken, id);
       
       setNotifications(prev => 
         id === 'all' 

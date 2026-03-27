@@ -1,4 +1,32 @@
-src/controllers/approvalController.ts(2,26): error TS2724: '"@prisma/client"' has no exported member named 'NotificationTarget'. Did you mean 'Notification'?
-src/controllers/authController.ts(5,32): error TS2724: '"@prisma/client"' has no exported member named 'NotificationTarget'. Did you mean 'Notification'?
-src/controllers/notificationsController.ts(68,18): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+﻿src/controllers/adminController.ts(351,34): error TS2339: Property 'affiliateCoupon' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/controllers/adminController.ts(386,37): error TS2339: Property 'affiliateCoupon' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/controllers/adminController.ts(398,33): error TS2339: Property 'affiliateCoupon' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/controllers/adminController.ts(414,16): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
   Type 'string[]' is not assignable to type 'string'.
+src/controllers/adminController.ts(417,34): error TS2339: Property 'user' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/adminController.ts(421,35): error TS2339: Property 'affiliateCoupon' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/controllers/adminController.ts(423,37): error TS2322: Type 'string | string[]' is not assignable to type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+src/controllers/adminController.ts(423,70): error TS2339: Property 'user' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/adminController.ts(425,53): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+src/controllers/adminController.ts(425,76): error TS2339: Property 'user' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/affiliatesController.ts(44,59): error TS2353: Object literal may only specify known properties, and 'coupon' does not exist in type 'AffiliateInclude<DefaultArgs>'.
+src/controllers/affiliatesController.ts(52,37): error TS2339: Property 'commissions' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/affiliatesController.ts(52,57): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/controllers/affiliatesController.ts(52,62): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/controllers/affiliatesController.ts(53,34): error TS2339: Property 'commissions' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/affiliatesController.ts(53,54): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/controllers/affiliatesController.ts(53,59): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/controllers/affiliatesController.ts(54,38): error TS2339: Property 'affiliateLinks' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/affiliatesController.ts(54,111): error TS2339: Property 'affiliateLinks' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/affiliatesController.ts(66,25): error TS2339: Property 'coupon' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/affiliatesController.ts(68,29): error TS2339: Property 'coupon' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/affiliatesController.ts(69,42): error TS2339: Property 'coupon' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/affiliatesController.ts(70,32): error TS2339: Property 'coupon' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/affiliatesController.ts(71,34): error TS2339: Property 'coupon' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/controllers/affiliatesController.ts(72,37): error TS2339: Property 'coupon' does not exist on type '{ socialLinks: JsonValue; interests: string[]; id: string; createdAt: Date; updatedAt: Date; status: ApprovalStatus; userId: string; }'.
+src/lib/coupon.ts(14,35): error TS2339: Property 'affiliateCoupon' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/coupon.ts(28,33): error TS2339: Property 'affiliateCoupon' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/coupon.ts(33,17): error TS2339: Property 'affiliateCoupon' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/coupon.ts(44,17): error TS2339: Property 'affiliateCoupon' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.

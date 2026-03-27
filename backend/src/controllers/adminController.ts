@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Role, ApprovalStatus } from '@prisma/client';
+import { Role, ApprovalStatus, CommissionStatus, PayoutStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import prisma from '../lib/prisma';
 import { requireAdminCredentials } from '../lib/adminConfig';
@@ -348,7 +348,7 @@ export async function togglePostSponsored(req: Request, res: Response): Promise<
 
 export async function listAffiliateCoupons(_req: Request, res: Response): Promise<void> {
   try {
-    const coupons = await prisma.affiliateCoupon.findMany({
+    const coupons = await (prisma as any).affiliateCoupon.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         affiliate: {
@@ -383,7 +383,7 @@ export async function updateAffiliateCoupon(req: Request, res: Response): Promis
         res.status(400).json({ error: 'Coupon code must contain alphanumeric characters' });
         return;
       }
-      const existing = await prisma.affiliateCoupon.findUnique({ where: { code: normalized } });
+      const existing = await (prisma as any).affiliateCoupon.findUnique({ where: { code: normalized } });
       if (existing && existing.affiliateId !== affiliateId) {
         res.status(409).json({ error: 'Coupon code already in use' });
         return;
@@ -395,8 +395,14 @@ export async function updateAffiliateCoupon(req: Request, res: Response): Promis
     if (usageLimit !== undefined) updates.usageLimit = Number(usageLimit);
     if (expiresAt) updates.expiresAt = new Date(expiresAt);
 
-    const coupon = await prisma.affiliateCoupon.update({
-      where: { affiliateId },
+    const existingCoupon = await (prisma as any).affiliateCoupon.findUnique({ where: { affiliateId } });
+    if (!existingCoupon) {
+      res.status(404).json({ error: 'Coupon not found' });
+      return;
+    }
+
+    const coupon = await (prisma as any).affiliateCoupon.update({
+      where: { id: existingCoupon.id },
       data: updates,
     });
 
@@ -409,8 +415,8 @@ export async function updateAffiliateCoupon(req: Request, res: Response): Promis
 
 export async function regenerateAffiliateCouponHandler(req: Request, res: Response): Promise<void> {
   try {
-    const { affiliateId } = req.params;
-    const affiliate = await prisma.affiliate.findUnique({
+    const { affiliateId } = req.params as { affiliateId: string };
+    const affiliate = await (prisma.affiliate as any).findUnique({
       where: { id: affiliateId },
       include: { user: true },
     });
@@ -418,14 +424,199 @@ export async function regenerateAffiliateCouponHandler(req: Request, res: Respon
       res.status(404).json({ error: 'Affiliate not found' });
       return;
     }
-    const existing = await prisma.affiliateCoupon.findUnique({ where: { affiliateId } });
+    const existing = await (prisma as any).affiliateCoupon.findUnique({ where: { affiliateId: affiliateId as string } });
     if (!existing) {
-      await ensureAffiliateCoupon({ affiliateId, baseName: affiliate.user.fullName });
+      await ensureAffiliateCoupon({ affiliateId: affiliateId as string, baseName: affiliate.user.fullName });
     }
-    const updated = await regenerateAffiliateCoupon(affiliateId, affiliate.user.fullName);
+    const updated = await regenerateAffiliateCoupon(affiliateId as string, affiliate.user.fullName);
     res.json({ coupon: updated });
   } catch (error) {
     console.error('Regenerate affiliate coupon error:', error);
     res.status(500).json({ error: 'Unable to regenerate coupon' });
+  }
+}
+
+export async function listCommissionRequests(_req: Request, res: Response): Promise<void> {
+  try {
+    const requests = await (prisma as any).commissionRequest.findMany({
+      include: {
+        affiliate: {
+          include: {
+            user: {
+              select: { id: true, fullName: true, email: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ requests });
+  } catch (error) {
+    console.error('List commission requests error:', error);
+    res.status(500).json({ error: 'Unable to list commission requests' });
+  }
+}
+
+export async function updateCommissionRequestStatus(req: Request, res: Response): Promise<void> {
+  try {
+    const { requestId } = req.params;
+    const { status, requestedCommission } = req.body; // Admin can override the commission before approval
+
+    const commissionRequest = await (prisma as any).commissionRequest.findUnique({
+      where: { id: requestId },
+      include: { affiliate: true }
+    });
+
+    if (!commissionRequest) {
+      res.status(404).json({ error: 'Request not found' });
+      return;
+    }
+
+    const updatedRequest = await (prisma as any).commissionRequest.update({
+      where: { id: requestId },
+      data: { status, requestedCommission: Number(requestedCommission) || commissionRequest.requestedCommission }
+    });
+
+    if (status === 'APPROVED') {
+      const finalCommission = Number(requestedCommission) || commissionRequest.requestedCommission;
+      await (prisma.affiliate as any).update({
+        where: { id: commissionRequest.affiliateId },
+        data: { customCommission: finalCommission }
+      });
+      
+      // Also update the associated coupon's commission percent
+      await (prisma as any).affiliateCoupon.updateMany({
+        where: { affiliateId: commissionRequest.affiliateId },
+        data: { commissionPercent: finalCommission }
+      });
+    }
+
+    res.json({ request: updatedRequest });
+  } catch (error) {
+    console.error('Update commission request error:', error);
+    res.status(500).json({ error: 'Unable to update commission request' });
+  }
+}
+
+export async function listPendingCommissions(_req: Request, res: Response): Promise<void> {
+  try {
+    const commissions = await prisma.commission.findMany({
+      where: { status: { in: ['PENDING', 'APPROVED'] } },
+      include: {
+        affiliate: { include: { user: { select: { fullName: true, email: true } } } },
+        product: { select: { name: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ commissions });
+  } catch (error) {
+    console.error('List pending commissions error:', error);
+    res.status(500).json({ error: 'Unable to list pending commissions' });
+  }
+}
+
+export async function approveCommission(req: Request, res: Response): Promise<void> {
+  try {
+    const commissionId = req.params.commissionId as string;
+    const { status } = req.body; // APPROVED or REJECTED
+
+    const updated = await prisma.commission.update({
+      where: { id: commissionId },
+      data: { status: status as CommissionStatus }
+    });
+
+    res.json({ commission: updated });
+  } catch (error) {
+    console.error('Approve commission error:', error);
+    res.status(500).json({ error: 'Unable to update commission status' });
+  }
+}
+
+export async function listPayoutBatches(_req: Request, res: Response): Promise<void> {
+  try {
+    const batches = await prisma.payoutBatch.findMany({
+      include: {
+        commissions: true,
+        // We need the affiliate info, but PayoutBatch doesn't have a direct relation in schema yet if not added
+        // Wait, I should add the relation in schema if needed, but for now I can query based on affiliateId
+      },
+      orderBy: { payoutDate: 'desc' }
+    });
+    
+    // Supplement with affiliate names
+    const enrichedBatches = await Promise.all(batches.map(async (batch: any) => {
+      const affiliate = await prisma.affiliate.findUnique({
+        where: { id: batch.affiliateId },
+        include: { user: { select: { fullName: true } } }
+      });
+      return { ...batch, affiliateName: affiliate?.user.fullName || 'Unknown' };
+    }));
+
+    res.json({ batches: enrichedBatches });
+  } catch (error) {
+    console.error('List payout batches error:', error);
+    res.status(500).json({ error: 'Unable to list payout batches' });
+  }
+}
+
+export async function createPayoutBatch(req: Request, res: Response): Promise<void> {
+  try {
+    const { affiliateId, startDate, endDate, payoutDate, commissionIds } = req.body;
+
+    const totalAmount = await prisma.commission.aggregate({
+      where: { id: { in: commissionIds } },
+      _sum: { amount: true }
+    });
+
+    const batch = await prisma.payoutBatch.create({
+      data: {
+        affiliateId,
+        totalAmount: totalAmount._sum.amount || 0,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        payoutDate: new Date(payoutDate),
+        status: 'SCHEDULED',
+        commissions: {
+          connect: commissionIds.map((id: string) => ({ id }))
+        }
+      }
+    });
+
+    // Mark commissions as PROCESSING
+    await prisma.commission.updateMany({
+      where: { id: { in: commissionIds } },
+      data: { status: 'PROCESSING' }
+    });
+
+    res.status(201).json({ batch });
+  } catch (error) {
+    console.error('Create payout batch error:', error);
+    res.status(500).json({ error: 'Unable to create payout batch' });
+  }
+}
+
+export async function updatePayoutStatus(req: Request, res: Response): Promise<void> {
+  try {
+    const { batchId } = req.params;
+    const { status } = req.body;
+
+    const batch = await prisma.payoutBatch.update({
+      where: { id: batchId as string },
+      data: { status: status as PayoutStatus },
+      include: { commissions: true }
+    });
+
+    if (status === 'PAID') {
+      // Mark all associated commissions as PAID
+      await prisma.commission.updateMany({
+        where: { payoutBatchId: batchId as string },
+        data: { status: 'PAID' }
+      });
+    }
+
+    res.json({ batch });
+  } catch (error) {
+    console.error('Update payout status error:', error);
+    res.status(500).json({ error: 'Unable to update payout status' });
   }
 }

@@ -11,7 +11,7 @@ export async function generateCouponCode(prefixSource: string): Promise<string> 
   const prefix = sanitizePrefix(prefixSource);
   for (let attempt = 0; attempt < 12; attempt += 1) {
     const candidate = createCandidateCode(prefix);
-    const existing = await prisma.affiliateCoupon.findUnique({ where: { code: candidate } });
+    const existing = await (prisma as any).affiliateCoupon.findUnique({ where: { code: candidate } });
     if (!existing) {
       return candidate;
     }
@@ -25,12 +25,12 @@ export async function ensureAffiliateCoupon(opts: {
   commissionPercent?: number;
 }) {
   const { affiliateId, baseName, commissionPercent = 20 } = opts;
-  const existing = await prisma.affiliateCoupon.findUnique({ where: { affiliateId } });
+  const existing = await (prisma as any).affiliateCoupon.findUnique({ where: { affiliateId } });
   if (existing) {
     return existing;
   }
   const code = await generateCouponCode(baseName);
-  return prisma.affiliateCoupon.create({
+  return (prisma as any).affiliateCoupon.create({
     data: {
       affiliateId,
       code,
@@ -41,8 +41,11 @@ export async function ensureAffiliateCoupon(opts: {
 
 export async function regenerateAffiliateCoupon(affiliateId: string, baseName: string) {
   const code = await generateCouponCode(baseName);
-  return prisma.affiliateCoupon.update({
-    where: { affiliateId },
+  const existing = await prisma.affiliateCoupon.findUnique({ where: { affiliateId } });
+  if (!existing) throw new Error('Affiliate coupon not found');
+  
+  return (prisma as any).affiliateCoupon.update({
+    where: { id: existing.id },
     data: {
       code,
       usesCount: 0,

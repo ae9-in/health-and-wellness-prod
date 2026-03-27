@@ -66,6 +66,10 @@ export async function markAsRead(req: AuthRequest, res: Response): Promise<void>
       return;
     }
     if (id === 'all') {
+      if (!userId) {
+        res.status(401).json({ error: 'User ID required' });
+        return;
+      }
       await prisma.notification.updateMany({
         where: { userId, read: false },
         data: { read: true }

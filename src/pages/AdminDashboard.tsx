@@ -27,7 +27,9 @@ import {
   updateSession,
   deleteSession,
   getAdminComments,
-  deleteAdminComment
+  deleteAdminComment,
+  getAdminCommissionRequests,
+  updateAdminCommissionRequest
 } from '@/lib/api';
 import NotificationPanel from '@/components/NotificationPanel';
 import { Button } from '@/components/ui/button';
@@ -149,12 +151,13 @@ export default function AdminDashboard() {
   // Queries
   const { data: stats } = useQuery({ queryKey: ['adminStats'], queryFn: () => getAdminStats(token!), enabled: !!token });
   const { data: users = [] } = useQuery({ queryKey: ['adminUsers'], queryFn: () => getAdminUsers(token!), enabled: !!token });
-  const { data: posts = [] } = useQuery({ queryKey: ['adminPosts'], queryFn: getPosts });
-  const { data: sessions = [] } = useQuery({ queryKey: ['adminSessions'], queryFn: getSessions });
+  const { data: posts = [] } = useQuery({ queryKey: ['adminPosts'], queryFn: () => getPosts() });
+  const { data: sessions = [] } = useQuery({ queryKey: ['adminSessions'], queryFn: () => getSessions() });
   const { data: affiliates = [] } = useQuery({ queryKey: ['adminAffiliates'], queryFn: () => getAdminAffiliates(token!), enabled: !!token });
   const { data: brands = [] } = useQuery({ queryKey: ['adminBrands'], queryFn: () => getAdminBrands(token!), enabled: !!token });
   const { data: products = [] } = useQuery({ queryKey: ['adminProducts'], queryFn: () => getAdminProducts(token!), enabled: !!token });
   const { data: comments = [] } = useQuery({ queryKey: ['adminComments'], queryFn: () => getAdminComments(token!), enabled: !!token });
+  const { data: commissionRequests = [] } = useQuery({ queryKey: ['commission-requests'], queryFn: () => getAdminCommissionRequests(token!), enabled: !!token });
   const [growthData, setGrowthData] = useState<GrowthPoint[]>(() => createInitialGrowth());
   const [mindfulMinutes, setMindfulMinutes] = useState(24);
   const [mindfulNote, setMindfulNote] = useState('Morning session ✓');
@@ -256,6 +259,10 @@ export default function AdminDashboard() {
   const deletePostMutation = useMutation({ mutationFn: (id: string) => deletePostAdmin(token!, id), ...mutationOptions });
   const toggleSponsoredMutation = useMutation({ mutationFn: (id: string) => togglePostSponsored(token!, id), ...mutationOptions });
   const deleteCommentMutation = useMutation({ mutationFn: (id: string) => deleteAdminComment(token!, id), ...mutationOptions });
+  const commissionRequestMutation = useMutation({ 
+    mutationFn: ({id, payload}: {id: string, payload: { status: string, requestedCommission?: number }}) => updateAdminCommissionRequest(token!, id, payload),
+    ...mutationOptions 
+  });
 
   const [sessionDialog, setSessionDialog] = useState(false);
   const [newSession, setNewSession] = useState({ title: '', description: '', hostName: '', date: '', sessionLink: '' });
@@ -323,6 +330,7 @@ export default function AdminDashboard() {
               { id: 'users', label: 'Membership', icon: Users },
               { id: 'partners', label: 'Partner Hub', icon: Handshake },
               { id: 'marketplace', label: 'Marketplace', icon: Package },
+              { id: 'commission-requests', label: 'Commission Queue', icon: TrendingUp },
               { id: 'content', label: 'Content Lab', icon: MessageSquare },
               { id: 'sessions', label: 'Wellness Events', icon: Calendar },
             ].map(item => (
@@ -930,6 +938,103 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+
+            {activeTab === 'commission-requests' && (
+              <div className="bg-white rounded-[2.5rem] border border-border/50 shadow-sm overflow-hidden">
+                <div className="p-8 border-b border-border/40 flex items-center justify-between bg-primary/5">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                      <TrendingUp className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-xl">Commission Request Queue</h3>
+                      <p className="text-xs text-muted-foreground font-medium">Review and override commission rates for top performers</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-muted/10">
+                        <th className="px-8 py-6 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">Affiliate</th>
+                        <th className="px-8 py-6 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">Proposed Change</th>
+                        <th className="px-8 py-6 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">Justification</th>
+                        <th className="px-8 py-6 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">Decision</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {commissionRequests.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-8 py-12 text-center text-muted-foreground font-medium italic">
+                            No pending commission requests at this time.
+                          </td>
+                        </tr>
+                      ) : (
+                        commissionRequests.map((req: any) => (
+                          <tr key={req.id} className="hover:bg-primary/[0.02] transition-colors group">
+                            <td className="px-8 py-6">
+                              <div className="font-black text-[#1A2E05]">{req.affiliate.user.fullName}</div>
+                              <div className="text-[11px] font-bold text-muted-foreground">{req.affiliate.user.email}</div>
+                            </td>
+                            <td className="px-8 py-6">
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-bold text-muted-foreground line-through">{req.currentCommission}%</span>
+                                <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+                                <span className="text-lg font-black text-emerald-600">{req.requestedCommission}%</span>
+                              </div>
+                            </td>
+                            <td className="px-8 py-6">
+                              <p className="text-xs text-muted-foreground font-medium max-w-xs line-clamp-2 italic">
+                                "{req.reason}"
+                              </p>
+                            </td>
+                            <td className="px-8 py-6 text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button 
+                                  size="sm" 
+                                  className="h-9 px-5 rounded-xl font-black text-[10px] uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700"
+                                  onClick={() => {
+                                    const override = prompt('Enter approved commission percentage (or leave blank for requested rate):', String(req.requestedCommission));
+                                    if (override !== null) {
+                                      commissionRequestMutation.mutate({
+                                        id: req.id,
+                                        payload: { 
+                                          status: 'APPROVED', 
+                                          requestedCommission: parseFloat(override) || req.requestedCommission 
+                                        }
+                                      });
+                                    }
+                                  }}
+                                  disabled={commissionRequestMutation.isPending}
+                                >
+                                  Approve
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-9 px-5 rounded-xl font-black text-[10px] uppercase tracking-widest text-destructive border-destructive/20 hover:bg-destructive/10"
+                                  onClick={() => {
+                                    if (confirm('Reject this commission request?')) {
+                                      commissionRequestMutation.mutate({
+                                        id: req.id,
+                                        payload: { status: 'REJECTED' }
+                                      });
+                                    }
+                                  }}
+                                  disabled={commissionRequestMutation.isPending}
+                                >
+                                  Reject
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {activeTab === 'sessions' && (
               <div className="space-y-8">

@@ -33,6 +33,14 @@ export async function reviewAffiliate(req: any & RealtimeRequest, res: Response)
       include: { user: true },
     });
 
+    if (status === 'APPROVED') {
+      const { ensureAffiliateCoupon } = require('../lib/coupon');
+      await ensureAffiliateCoupon({ 
+        affiliateId: affiliate.id, 
+        baseName: affiliate.user.fullName 
+      });
+    }
+
     await createNotification(
       req,
       affiliate.userId,

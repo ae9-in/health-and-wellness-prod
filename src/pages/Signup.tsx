@@ -43,12 +43,19 @@ export default function Signup() {
   ];
 
   const handleInterestToggle = (interest: string) => {
-    setForm(f => ({
-      ...f,
-      interests: f.interests.includes(interest)
-        ? f.interests.filter(i => i !== interest)
-        : [...f.interests, interest].slice(0, 3) // Max 3 as per req
-    }));
+    setForm(f => {
+      const isSelected = f.interests.includes(interest);
+      if (!isSelected && f.interests.length >= 3) {
+        toast.error('You can select up to 3 categories only');
+        return f;
+      }
+      return {
+        ...f,
+        interests: isSelected
+          ? f.interests.filter(i => i !== interest)
+          : [...f.interests, interest]
+      };
+    });
   };
 
   const handleNext = () => {
@@ -162,21 +169,30 @@ export default function Signup() {
               {role === 'AFFILIATE' && step === 2 ? (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
                   <div className="grid grid-cols-2 gap-4">
-                    {affiliateInterests.map(interest => (
-                      <button
-                        key={interest}
-                        type="button"
-                        onClick={() => handleInterestToggle(interest)}
-                        className={`p-4 rounded-2xl border text-sm font-bold transition-all text-left flex items-center justify-between group ${
-                          form.interests.includes(interest) 
-                            ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' 
-                            : 'bg-muted/10 border-transparent hover:border-primary/30 text-muted-foreground'
-                        }`}
-                      >
-                        {interest}
-                        {form.interests.includes(interest) && <ShieldCheck className="h-4 w-4" />}
-                      </button>
-                    ))}
+                    {affiliateInterests.map(interest => {
+                      const isSelected = form.interests.includes(interest);
+                      return (
+                        <button
+                          key={interest}
+                          type="button"
+                          onClick={() => handleInterestToggle(interest)}
+                          className={`p-5 rounded-[1.5rem] border-2 text-sm font-bold transition-all text-left flex items-center justify-between group h-16 ${
+                            isSelected 
+                              ? 'bg-[#0f2e1c] border-[#0f2e1c] text-white shadow-xl shadow-emerald-900/10' 
+                              : 'bg-white border-[#E5E7EB] hover:border-[#4F7153]/50 text-[#1A2E05]'
+                          }`}
+                        >
+                          {interest}
+                          <div className={`h-6 w-6 rounded-full flex items-center justify-center transition-all ${
+                            isSelected ? 'bg-white/20' : 'bg-[#F3F4F6] order-last'
+                          }`}>
+                            <ShieldCheck className={`h-4 w-4 transition-all ${
+                              isSelected ? 'text-white' : 'text-[#D1D5DB] group-hover:text-[#4F7153]/50'
+                            }`} />
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                   <p className="text-[10px] text-center font-black uppercase tracking-widest text-muted-foreground">Select 2-3 categories to receive tailored recommendations</p>
                   <Button 
