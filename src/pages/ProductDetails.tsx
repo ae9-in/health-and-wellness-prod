@@ -64,10 +64,11 @@ export default function ProductDetails() {
       if (id) {
         setLoading(true);
         const data = await getProductDetails(id);
-        setProduct(data);
+        const resolvedProduct = (data as any)?.product || data;
+        setProduct(resolvedProduct);
         
-        const variants = parseVariants(data?.variants);
-        if (variants.length > 0) {
+        const variants = parseVariants(resolvedProduct?.variants);
+        if (variants && variants.length > 0) {
           setSelectedVariantIdx(0);
         }
         
