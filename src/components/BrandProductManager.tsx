@@ -48,8 +48,9 @@ export default function BrandProductManager() {
   }, []);
 
   const handleCreate = async () => {
-    if (!form.name || form.category.length === 0 || !form.description || !form.price) {
-      toast.error('Required fields: Name, Category, Description, Price');
+    const hasVariants = form.variants.length > 0;
+    if (!form.name || form.category.length === 0 || !form.description || (!form.price && !hasVariants)) {
+      toast.error(`Required fields: Name, Category, Description${hasVariants ? '' : ', Price'}`);
       return;
     }
     setIsLoading(true);
