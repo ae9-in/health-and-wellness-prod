@@ -139,7 +139,7 @@ export default function ProductDetails() {
                 <img 
                   src={images[activeImage]} 
                   alt={product.name} 
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                  className="w-full h-full object-contain p-2 transition-transform duration-1000 group-hover:scale-110"
                 />
                 {product.isPopular && (
                   <div className="absolute top-10 left-10">
@@ -181,18 +181,19 @@ export default function ProductDetails() {
                 <div className="text-3xl font-bold text-primary">
                   {(() => {
                     const variants = parseVariants(product.variants);
-                    const price = selectedVariantIdx !== null && variants[selectedVariantIdx]?.price 
+                    const price = (selectedVariantIdx !== null && variants[selectedVariantIdx]?.price)
                       ? parseFloat(variants[selectedVariantIdx].price) 
-                      : product.price;
+                      : (product.price || 0);
                     return formatPrice(price);
                   })()}
                 </div>
                 <Badge variant="outline" className="text-green-600 bg-green-50 border-green-200">
                   <CircleCheck className="w-3 h-3 mr-1" /> In Stock {(() => {
                     const variants = parseVariants(product.variants);
-                    return selectedVariantIdx !== null && variants[selectedVariantIdx]?.stock !== undefined
-                      ? `(${variants[selectedVariantIdx].stock})`
-                      : `(${product.stock})`;
+                    const stock = (selectedVariantIdx !== null && variants[selectedVariantIdx]?.stock !== undefined)
+                      ? variants[selectedVariantIdx].stock
+                      : (product.stock || 0);
+                    return `(${stock})`;
                   })()}
                 </Badge>
               </div>
@@ -245,10 +246,9 @@ export default function ProductDetails() {
               transition={{ delay: 0.2 }}
               className="space-y-6"
             >
-              <div className="p-6 rounded-2xl bg-white shadow-sm border border-primary/5">
-// ... existing description section ...
-                <h3 className="font-bold mb-3">Product Description</h3>
-                <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+              <div className="p-8 rounded-[2.5rem] bg-white shadow-sm border border-primary/5">
+                <h3 className="text-xl font-black mb-4 text-[#1A2E05]">Product Description</h3>
+                <p className="text-muted-foreground leading-relaxed whitespace-pre-line font-medium text-[16px]">
                   {product.description}
                 </p>
               </div>

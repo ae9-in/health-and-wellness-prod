@@ -31,7 +31,7 @@ export default function AffiliateProductCard({ product, referralCode }: Affiliat
         <img 
           src={resolveImageUrl(product.images?.[0] || (product as any).image)} 
           alt={product.name}
-          className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
+          className="object-contain w-full h-full p-2 group-hover:scale-110 transition-transform duration-500 bg-white/50"
         />
         <div className="absolute top-3 right-3 flex flex-col gap-2">
           <Badge className="bg-emerald-500 text-white border-none shadow-md">

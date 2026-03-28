@@ -27,7 +27,7 @@ export function parseVariants(variants: any): any[] {
   return [];
 }
 export function resolveImageUrl(url: string | undefined): string {
-  if (!url) return 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80';
+  if (!url) return 'https://images.unsplash.com/photo-1540344484110-2c93d80db616?auto=format&fit=crop&w=800&q=80'; // Neutral wellness herbs
   if (url.startsWith('http')) return url;
   if (url.startsWith('data:')) return url;
   

@@ -19,7 +19,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <img
           src={resolveImageUrl(product.images?.[0] || (product as any).image)}
           alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105 bg-slate-50/30"
         />
         {product.isPopular && (
           <Badge className="absolute top-3 left-3 bg-amber-500 text-white border-none shadow-lg">
