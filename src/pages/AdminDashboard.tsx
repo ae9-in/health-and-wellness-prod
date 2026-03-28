@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { Post, Session } from '@/lib/types';
 import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -215,31 +216,6 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, [addGrowthPoint]);
 
-  useEffect(() => {
-    const handleNewUser = () => addGrowthPoint({ users: 1 });
-    const handleNewPost = () => addGrowthPoint({ posts: 1 });
-    const handleNewRevenue = (payload: { amount?: number }) => addGrowthPoint({ revenue: Math.round(payload?.amount ?? 30) });
-    socket.on('user:created', handleNewUser);
-    socket.on('post:created', handleNewPost);
-    socket.on('payment:created', handleNewRevenue);
-    return () => {
-      socket.off('user:created', handleNewUser);
-      socket.off('post:created', handleNewPost);
-      socket.off('payment:created', handleNewRevenue);
-    };
-  }, [addGrowthPoint]);
-
-  if (!isAdmin || !token) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Establishing Secure Session...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Mutations
   const mutationOptions = {
     onSuccess: () => queryClient.invalidateQueries()
@@ -274,9 +250,20 @@ export default function AdminDashboard() {
   const [newSession, setNewSession] = useState({ title: '', description: '', hostName: '', date: '', sessionLink: '' });
   const [editSessionId, setEditSessionId] = useState<string | null>(null);
 
-  const createSessionMutation = useMutation({ mutationFn: (payload: any) => createSession(token!, payload), ...mutationOptions });
-  const updateSessionMutation = useMutation({ mutationFn: ({id, payload}: {id: string, payload: any}) => updateSession(token!, id, payload), ...mutationOptions });
+  const createSessionMutation = useMutation({ mutationFn: (payload: Omit<Session, 'id' | 'registeredUsers'>) => createSession(token!, payload), ...mutationOptions });
+  const updateSessionMutation = useMutation({ mutationFn: ({id, payload}: {id: string, payload: Partial<Omit<Session, 'id' | 'registeredUsers'>>}) => updateSession(token!, id, payload), ...mutationOptions });
   const deleteSessionMutation = useMutation({ mutationFn: (id: string) => deleteSession(token!, id), ...mutationOptions });
+
+  if (!isAdmin || !token) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Establishing Secure Session...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Handlers
   const handleUserAction = (id: string, action: 'block' | 'delete') => {
@@ -923,7 +910,18 @@ export default function AdminDashboard() {
                               <div className="relative h-14 w-14 rounded-2xl overflow-hidden shadow-md">
                                 <img src={p.images?.[0] || 'https://via.placeholder.com/80'} alt="" className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
                               </div>
-                              <div className="font-black text-[#1A2E05]">{p.name}</div>
+                              <div>
+                                <div className="font-black text-[#1A2E05]">{p.name}</div>
+                                {p.variants && Array.isArray(p.variants) && (p.variants as any[]).length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {(p.variants as any[]).map((v, i) => (
+                                      <span key={i} className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-primary/5 text-primary border border-primary/10">
+                                        {v.quantity}{v.unit} • {v.size} {v.price ? `(₹${v.price})` : ''}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="px-8 py-6 text-muted-foreground font-bold text-xs">{p.brand?.name || 'Authorized Partner'}</td>
@@ -1250,7 +1248,7 @@ export default function AdminDashboard() {
   );
 }
 
-function Clock(props: any) {
+function Clock(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

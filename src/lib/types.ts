@@ -8,6 +8,14 @@ export interface Brand {
   website?: string;
 }
 
+export interface ProductVariant {
+  quantity: number;
+  unit: 'ml' | 'liter' | 'gram' | 'kg' | 'pieces' | 'tablets' | 'capsules';
+  size: string;
+  price: number;
+  stock: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -21,6 +29,7 @@ export interface Product {
   brandId: string;
   brand?: Brand;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  variants?: ProductVariant[];
   createdAt: string;
 }
 

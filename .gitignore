@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Temporary files
+*_results.txt
+*_results_final.txt
+*_results_latest.txt
+*_results_utf8.txt
+tmp_check_db.ts
+lint_results*
+tsc_results*
+*.txt
+*.log

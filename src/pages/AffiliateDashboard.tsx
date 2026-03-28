@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { Post } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { Navigate, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -114,6 +115,15 @@ export default function AffiliateDashboard() {
     };
   }, [filters]);
 
+  useEffect(() => {
+    // Priority: Custom Commission > Tiered Commission
+    if (affiliateData?.customCommission !== undefined && affiliateData?.customCommission !== null) {
+      setCommission(String(affiliateData.customCommission));
+    } else {
+      setCommission(String(calculateTieredCommission(parseInt(sales) || 0)));
+    }
+  }, [sales, affiliateData?.customCommission]);
+
   if (!user) return <Navigate to="/login" />;
   if (user.role !== 'AFFILIATE' && user.role !== 'ADMIN') return null;
 
@@ -188,15 +198,6 @@ export default function AffiliateDashboard() {
     setFilters({ search: '', category: '' });
   };
 
-  useEffect(() => {
-    // Priority: Custom Commission > Tiered Commission
-    if (affiliateData?.customCommission !== undefined && affiliateData?.customCommission !== null) {
-      setCommission(String(affiliateData.customCommission));
-    } else {
-      setCommission(String(calculateTieredCommission(parseInt(sales) || 0)));
-    }
-  }, [sales, affiliateData?.customCommission]);
-
   const handleCreateRequest = async () => {
     if (!requestedCommission || !requestReason) {
       toast.error('Please fill in all fields');
@@ -218,8 +219,8 @@ export default function AffiliateDashboard() {
       toast.success('Commission request submitted successfully!');
       setIsRequestModalOpen(false);
       setRequestReason('');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to submit request');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Failed to submit request');
     } finally {
       setIsSubmittingRequest(false);
     }
@@ -530,7 +531,7 @@ export default function AffiliateDashboard() {
 
               {authorPosts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {authorPosts.slice(0, 4).map((post: any) => (
+                  {authorPosts.slice(0, 4).map((post: Post) => (
                     <div key={post.id} className="bg-[#FDFDFB] rounded-[2rem] border border-primary/5 p-4 shadow-inner">
                       <FeedPost post={post} />
                     </div>

@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { getBrandProducts, createBrandProduct, deleteBrandProduct } from '@/lib/api';
 import { Product } from '@/lib/types';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, parseVariants } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Package, Plus, Trash2, Image as ImageIcon, IndianRupee, Tag, Info, ListFilter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,6 +22,7 @@ export default function BrandProductManager() {
     price: '',
     commissionRate: '',
     stock: '',
+    variants: [] as any[]
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -32,7 +33,7 @@ export default function BrandProductManager() {
     if (!token) return;
     try {
       const items = await getBrandProducts(token);
-      const list = Array.isArray(items) ? items : (items?.products ?? []);
+      const list = Array.isArray(items) ? items : [];
       setProducts(list);
     } catch (err) {
       console.error('Failed to load products');
@@ -60,6 +61,7 @@ export default function BrandProductManager() {
         price: parseFloat(form.price) || 0,
         commissionRate: parseFloat(form.commissionRate) || 0,
         stock: Number(form.stock) || 0,
+        variants: form.variants.length > 0 ? JSON.stringify(form.variants) : undefined
       };
 
       if (selectedFiles.length > 0) {
@@ -70,9 +72,9 @@ export default function BrandProductManager() {
         selectedFiles.forEach(file => formData.append('images', file));
         await createBrandProduct(token, formData);
       } else {
-        await createBrandProduct(token, payload);
+        await createBrandProduct(token, payload as any);
       }
-      setForm({ name: '', category: '', description: '', images: '', price: '', commissionRate: '', stock: '' });
+      setForm({ name: '', category: '', description: '', images: '', price: '', commissionRate: '', stock: '', variants: [] });
       previewUrls.forEach(url => URL.revokeObjectURL(url));
       setPreviewUrls([]);
       setSelectedFiles([]);
@@ -196,6 +198,146 @@ export default function BrandProductManager() {
                 </div>
               </div>
 
+              {/* Product Variants Section */}
+              <div className="space-y-4 pt-4 border-t border-border/40">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Product Variants</Label>
+                    <div className="p-1 bg-primary/10 rounded-full text-primary">
+                      <Plus className="h-3 w-3" />
+                    </div>
+                  </div>
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/5"
+                    onClick={() => setForm(f => ({
+                      ...f, 
+                      variants: [...f.variants, { quantity: '', unit: 'ml', size: '', price: f.price, stock: f.stock }]
+                    }))}
+                  >
+                    + Add Variant
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  {form.variants.map((variant, idx) => (
+                    <div key={idx} className="bg-white/50 rounded-2xl p-4 border border-border/40 relative group/variant">
+                      <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-50 text-red-500 border border-red-100 opacity-0 group-hover/variant:opacity-100 transition-opacity z-10"
+                        onClick={() => setForm(f => ({
+                          ...f,
+                          variants: f.variants.filter((_, i) => i !== idx)
+                        }))}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-[9px] font-bold text-muted-foreground uppercase">Qty</Label>
+                          <Input 
+                            type="number" 
+                            className="h-9 rounded-lg text-xs" 
+                            value={variant.quantity} 
+                            onChange={e => {
+                              const val = e.target.value;
+                              setForm(f => {
+                                const newVariants = [...f.variants];
+                                let sizeSuggestion = variant.size;
+                                if (val) {
+                                  const q = parseFloat(val);
+                                  if (variant.unit === 'ml') {
+                                    if (q < 200) sizeSuggestion = 'Small';
+                                    else if (q < 500) sizeSuggestion = 'Medium';
+                                    else sizeSuggestion = 'Large';
+                                  }
+                                }
+                                newVariants[idx] = { ...variant, quantity: val, size: sizeSuggestion };
+                                return { ...f, variants: newVariants };
+                              });
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[9px] font-bold text-muted-foreground uppercase">Unit</Label>
+                          <select 
+                            className="w-full h-9 rounded-lg border border-border/60 bg-white text-xs px-2 focus:ring-1 focus:ring-primary outline-none"
+                            value={variant.unit}
+                            onChange={e => {
+                              setForm(f => {
+                                const newVariants = [...f.variants];
+                                newVariants[idx] = { ...variant, unit: e.target.value };
+                                return { ...f, variants: newVariants };
+                              });
+                            }}
+                          >
+                            {['ml', 'liter', 'gram', 'kg', 'pieces', 'tablets', 'capsules'].map(u => (
+                              <option key={u} value={u}>{u}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[9px] font-bold text-muted-foreground uppercase">Size / Label</Label>
+                          <Input 
+                            className="h-9 rounded-lg text-xs" 
+                            placeholder="e.g. Medium"
+                            value={variant.size} 
+                            onChange={e => {
+                              setForm(f => {
+                                const newVariants = [...f.variants];
+                                newVariants[idx] = { ...variant, size: e.target.value };
+                                return { ...f, variants: newVariants };
+                              });
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[9px] font-bold text-muted-foreground uppercase">Price (₹)</Label>
+                          <Input 
+                            type="number" 
+                            className="h-9 rounded-lg text-xs" 
+                            value={variant.price} 
+                            onChange={e => {
+                              setForm(f => {
+                                const newVariants = [...f.variants];
+                                newVariants[idx] = { ...variant, price: e.target.value };
+                                return { ...f, variants: newVariants };
+                              });
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[9px] font-bold text-muted-foreground uppercase">Stock</Label>
+                          <Input 
+                            type="number" 
+                            className="h-9 rounded-lg text-xs" 
+                            value={variant.stock} 
+                            onChange={e => {
+                              setForm(f => {
+                                const newVariants = [...f.variants];
+                                newVariants[idx] = { ...variant, stock: e.target.value };
+                                return { ...f, variants: newVariants };
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {form.variants.length === 0 && (
+                    <div className="py-6 border-2 border-dashed border-border/30 rounded-[2rem] text-center">
+                      <p className="text-[11px] text-muted-foreground font-medium">No variants added. Click "+ Add Variant" to include multiple sizes.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Image URLs (optional)</Label>
@@ -297,6 +439,20 @@ export default function BrandProductManager() {
                 )}
               </div>
               <p className="text-sm text-muted-foreground font-medium line-clamp-1">{product.description}</p>
+              
+              {(() => {
+                const parsedVariants = parseVariants(product.variants);
+                return parsedVariants.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2 justify-center md:justify-start">
+                    {parsedVariants.map((v: any, i: number) => (
+                      <span key={i} className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/5 text-primary border border-primary/10">
+                        {v.quantity}{v.unit} • {v.size} {v.price ? `(₹${v.price})` : ''}
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
+
               <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground justify-center md:justify-start pt-2">
                 <span className="flex items-center gap-1"><Tag className="h-3 w-3" /> {product.category}</span>
                 <span className="flex items-center gap-1"><Package className="h-3 w-3" /> {product.stock} in stock</span>

@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import CheckoutModal from '@/components/CheckoutModal';
 import { toast } from 'sonner';
 import { 
@@ -18,10 +19,11 @@ import {
   Truck, 
   ArrowLeft,
   CircleCheck,
-  Building2
+  Building2,
+  ChevronDown
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, parseVariants } from '@/lib/utils';
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +31,7 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null);
 
   const handlePaymentSuccess = async () => {
     if (!product) return;
@@ -38,9 +41,15 @@ export default function ProductDetails() {
         toast.error('You must be logged in to purchase');
         return;
       }
+      
+      const variants = parseVariants(product.variants);
+      const price = selectedVariantIdx !== null && variants[selectedVariantIdx]?.price 
+        ? parseFloat(variants[selectedVariantIdx].price) 
+        : product.price;
+
       await createPayment(token, {
-        amount: product.price,
-        plan: `Product: ${product.name}`,
+        amount: price,
+        plan: `Product: ${product.name}${selectedVariantIdx !== null ? ` (${variants[selectedVariantIdx].size})` : ''}`,
         paymentStatus: 'success',
         transactionId: 'DEMO_' + Date.now()
       });
@@ -56,6 +65,12 @@ export default function ProductDetails() {
         setLoading(true);
         const data = await getProductDetails(id);
         setProduct(data);
+        
+        const variants = parseVariants(data?.variants);
+        if (variants.length > 0) {
+          setSelectedVariantIdx(0);
+        }
+        
         setLoading(false);
       }
     };
@@ -63,6 +78,7 @@ export default function ProductDetails() {
   }, [id]);
 
   if (loading) {
+// ... existing loading state ...
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <Navbar />
@@ -158,11 +174,64 @@ export default function ProductDetails() {
               </div>
               <h1 className="font-display text-4xl md:text-5xl font-bold leading-tight">{product.name}</h1>
               <div className="flex items-center gap-4">
-                <div className="text-3xl font-bold text-primary">{formatPrice(product.price)}</div>
+                <div className="text-3xl font-bold text-primary">
+                  {(() => {
+                    const variants = parseVariants(product.variants);
+                    const price = selectedVariantIdx !== null && variants[selectedVariantIdx]?.price 
+                      ? parseFloat(variants[selectedVariantIdx].price) 
+                      : product.price;
+                    return formatPrice(price);
+                  })()}
+                </div>
                 <Badge variant="outline" className="text-green-600 bg-green-50 border-green-200">
-                  <CircleCheck className="w-3 h-3 mr-1" /> In Stock ({product.stock})
+                  <CircleCheck className="w-3 h-3 mr-1" /> In Stock {(() => {
+                    const variants = parseVariants(product.variants);
+                    return selectedVariantIdx !== null && variants[selectedVariantIdx]?.stock !== undefined
+                      ? `(${variants[selectedVariantIdx].stock})`
+                      : `(${product.stock})`;
+                  })()}
                 </Badge>
               </div>
+
+              {/* Variants Selector */}
+              {(() => {
+                const variants = parseVariants(product.variants);
+                if (variants.length === 0) return null;
+                return (
+                  <div className="space-y-4 py-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Select Option</Label>
+                      {selectedVariantIdx !== null && (
+                        <span className="text-[10px] font-bold text-primary italic">
+                          {variants[selectedVariantIdx].quantity}{variants[selectedVariantIdx].unit}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {variants.map((v, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setSelectedVariantIdx(idx)}
+                          className={`px-4 py-3 rounded-2xl border-2 transition-all flex flex-col items-center min-w-[80px] ${
+                            selectedVariantIdx === idx 
+                              ? 'border-primary bg-primary/5 shadow-md' 
+                              : 'border-primary/10 bg-white hover:border-primary/30'
+                          }`}
+                        >
+                          <span className={`text-xs font-black ${selectedVariantIdx === idx ? 'text-primary' : 'text-slate-600'}`}>
+                            {v.size || `${v.quantity}${v.unit}`}
+                          </span>
+                          {v.price && (
+                            <span className="text-[10px] font-medium text-muted-foreground mt-0.5">
+                              {formatPrice(parseFloat(v.price))}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </motion.div>
 
             <motion.div

@@ -11,3 +11,18 @@ export function formatPrice(price: number) {
     currency: 'INR',
   }).format(price);
 }
+
+export function parseVariants(variants: any): any[] {
+  if (!variants) return [];
+  if (Array.isArray(variants)) return variants;
+  if (typeof variants === 'string') {
+    try {
+      const parsed = JSON.parse(variants);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error('Failed to parse variants string:', variants);
+      return [];
+    }
+  }
+  return [];
+}

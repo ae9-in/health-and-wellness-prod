@@ -1,4 +1,4 @@
-import type { Partnership, Post, Session, User, Role, UserCommentActivity, Product, AdminComment } from './types';
+import type { Partnership, Post, Session, User, Role, UserCommentActivity, Product, AdminComment, Brand, Payment } from './types';
 
 const devDefault = 'http://localhost:5001/api';
 const prodDefault = 'https://health-and-wellness-prod.onrender.com/api';
@@ -84,10 +84,21 @@ export async function getAuthorPosts(authorId: string) {
 }
 
 export async function getAffiliateDashboard(token: string) {
-  return request<any>('/affiliates/dashboard', { method: 'GET' }, token);
+  return request<{
+    earnings: {
+      total: number;
+      pending: number;
+      totalSales: number;
+      conversionRate: number;
+      nextPayoutDate?: string;
+    };
+    coupon?: { code: string };
+    customCommission?: number | null;
+    activeRequest?: unknown;
+  }>('/affiliates/dashboard', { method: 'GET' }, token);
 }
 
-export async function createPost(token: string, payload: any) {
+export async function createPost(token: string, payload: Partial<Post>) {
   return request<Post>('/posts', { method: 'POST', body: JSON.stringify(payload) }, token);
 }
 
@@ -96,7 +107,7 @@ export async function togglePostLike(token: string, postId: string) {
 }
 
 export async function addComment(token: string, postId: string, commentText: string) {
-  return request<any>(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ commentText }) }, token);
+  return request<{ message: string; comment: Post['comments'][0] }>(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ commentText }) }, token);
 }
 
 export async function toggleSavePost(token: string, postId: string) {
@@ -109,19 +120,19 @@ export async function getSessions() {
 }
 
 export async function toggleSessionRegistration(token: string, sessionId: string) {
-  return request<any>(`/sessions/${sessionId}/register`, { method: 'POST' }, token);
+  return request<{ message: string; registered: boolean }>(`/sessions/${sessionId}/register`, { method: 'POST' }, token);
 }
 
-export async function adminCreateSession(token: string, payload: any) {
-  return request<any>('/admin/sessions', { method: 'POST', body: JSON.stringify(payload) }, token);
+export async function adminCreateSession(token: string, payload: Omit<Session, 'id' | 'registeredUsers'>) {
+  return request<Session>('/admin/sessions', { method: 'POST', body: JSON.stringify(payload) }, token);
 }
 
-export async function adminUpdateSession(token: string, sessionId: string, payload: any) {
-  return request<any>(`/admin/sessions/${sessionId}`, { method: 'PUT', body: JSON.stringify(payload) }, token);
+export async function adminUpdateSession(token: string, sessionId: string, payload: Partial<Omit<Session, 'id' | 'registeredUsers'>>) {
+  return request<Session>(`/admin/sessions/${sessionId}`, { method: 'PUT', body: JSON.stringify(payload) }, token);
 }
 
 export async function adminDeleteSession(token: string, sessionId: string) {
-  return request<any>(`/admin/sessions/${sessionId}`, { method: 'DELETE' }, token);
+  return request<{ message: string }>(`/admin/sessions/${sessionId}`, { method: 'DELETE' }, token);
 }
 
 export async function getPartnerships() {
@@ -153,15 +164,24 @@ export async function deleteAdminUser(token: string, id: string) {
 }
 
 export async function getAdminStats(token: string) {
-  return request<any>('/admin/stats', { method: 'GET' }, token);
+  return request<{
+    totalUsers: number;
+    totalPosts: number;
+    totalRevenue: number;
+    growth: number;
+    mindfulMinutes?: number;
+    mindfulNote?: string;
+    vitalityScore?: number;
+    vitalityComment?: string;
+  }>('/admin/stats', { method: 'GET' }, token);
 }
 
 export async function toggleBlockUser(token: string, userId: string) {
-  return request<any>(`/admin/users/${userId}/block`, { method: 'PATCH' }, token);
+  return request<{ blocked: boolean }>(`/admin/users/${userId}/block`, { method: 'PATCH' }, token);
 }
 
 export async function deleteUser(token: string, userId: string) {
-  return request<any>(`/admin/users/${userId}`, { method: 'DELETE' }, token);
+  return request<{ message: string }>(`/admin/users/${userId}`, { method: 'DELETE' }, token);
 }
 
 export async function getAdminPartnerships(token: string) {
@@ -169,39 +189,40 @@ export async function getAdminPartnerships(token: string) {
 }
 
 export async function updateAdminPartnershipStatus(token: string, id: string, status: string) {
-  return request<any>(`/admin/partnerships/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
+  return request<Partnership>(`/admin/partnerships/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
 }
 
 export async function getAdminProducts(token: string) {
-  const data = await request<{ products: any[] }>('/admin/products/all', { method: 'GET' }, token);
+  const data = await request<{ products: Product[] }>('/admin/products/all', { method: 'GET' }, token);
   return data.products;
 }
 
 export async function reviewProduct(token: string, productId: string, status: string) {
-  return request<any>(`/admin/products/${productId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
+  return request<Product>(`/admin/products/${productId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
 }
 
 export async function deleteAdminProduct(token: string, productId: string) {
-  return request<any>(`/admin/products/${productId}`, { method: 'DELETE' }, token);
+  return request<{ message: string }>(`/admin/products/${productId}`, { method: 'DELETE' }, token);
 }
 
-export async function createSession(token: string, payload: any) {
-  return request<any>('/admin/sessions', { method: 'POST', body: JSON.stringify(payload) }, token);
+export async function createSession(token: string, payload: Omit<Session, 'id' | 'registeredUsers'>) {
+  return request<Session>('/admin/sessions', { method: 'POST', body: JSON.stringify(payload) }, token);
 }
 
-export async function updateSession(token: string, id: string, payload: any) {
-  return request<any>(`/admin/sessions/${id}`, { method: 'PUT', body: JSON.stringify(payload) }, token);
+export async function updateSession(token: string, id: string, payload: Partial<Omit<Session, 'id' | 'registeredUsers'>>) {
+  return request<Session>(`/admin/sessions/${id}`, { method: 'PUT', body: JSON.stringify(payload) }, token);
 }
 
 export async function deleteSession(token: string, id: string) {
-  return request<any>(`/admin/sessions/${id}`, { method: 'DELETE' }, token);
+  return request<{ message: string }>(`/admin/sessions/${id}`, { method: 'DELETE' }, token);
 }
 
-export async function getProducts(filters: any = {}) {
+export async function getProducts(filters: Record<string, string | number | boolean | undefined> = {}) {
   const query = new URLSearchParams();
   Object.keys(filters).forEach(key => {
-    if (filters[key] !== undefined && filters[key] !== '') {
-      query.append(key, filters[key].toString());
+    const val = filters[key];
+    if (val !== undefined && val !== '') {
+      query.append(key, val.toString());
     }
   });
   const queryString = query.toString();
@@ -210,7 +231,7 @@ export async function getProducts(filters: any = {}) {
 }
 
 export async function getPublicBrands() {
-  return request<any[]>('/products/public-brands');
+  return request<Brand[]>('/products/public-brands');
 }
 
 export async function getAdminComments(token: string) {
@@ -222,16 +243,16 @@ export async function deleteAdminComment(token: string, commentId: string) {
 }
 
 export async function getProductDetails(id: string) {
-  return request<any>(`/products/${id}`);
+  return request<Product>(`/products/${id}`);
 }
 
 export async function getBrandProducts(token: string) {
-  return request<any[]>('/brands/products', { method: 'GET' }, token);
+  return request<Product[]>('/brands/products', { method: 'GET' }, token);
 }
 
-export async function createBrandProduct(token: string, product: any) {
+export async function createBrandProduct(token: string, product: Partial<Product> | FormData) {
   const isFormData = product instanceof FormData;
-  return request<any>(
+  return request<Product>(
     '/brands/products',
     {
       method: 'POST',
@@ -245,8 +266,8 @@ export async function deleteBrandProduct(token: string, id: string) {
   return request<any>(`/brands/products/${id}`, { method: 'DELETE' }, token);
 }
 
-export async function updateAffiliateProfile(token: string, profile: any) {
-  return request<any>('/user/affiliate-profile', { method: 'PUT', body: JSON.stringify(profile) }, token);
+export async function updateAffiliateProfile(token: string, profile: Partial<User>) {
+  return request<User>('/user/affiliate-profile', { method: 'PUT', body: JSON.stringify(profile) }, token);
 }
 
 export async function getNotifications(token: string) {
@@ -254,15 +275,15 @@ export async function getNotifications(token: string) {
 }
 
 export async function markNotificationRead(token: string, id: string) {
-  return request<any>(`/notifications/${id}/read`, { method: 'PUT' }, token);
+  return request<{ success: boolean }>(`/notifications/${id}/read`, { method: 'PUT' }, token);
 }
 
-export async function updatePostAdmin(token: string, id: string, payload: any) {
-  return request<any>(`/admin/posts/${id}`, { method: 'PUT', body: JSON.stringify(payload) }, token);
+export async function updatePostAdmin(token: string, id: string, payload: Partial<Post>) {
+  return request<Post>(`/admin/posts/${id}`, { method: 'PUT', body: JSON.stringify(payload) }, token);
 }
 
 export async function deletePostAdmin(token: string, id: string) {
-  return request<any>(`/admin/posts/${id}`, { method: 'DELETE' }, token);
+  return request<{ message: string }>(`/admin/posts/${id}`, { method: 'DELETE' }, token);
 }
 export async function getAdminAffiliates(token: string) {
   const data = await request<{ affiliates: any[] }>('/admin/affiliates/applications', { method: 'GET' }, token);
@@ -270,11 +291,11 @@ export async function getAdminAffiliates(token: string) {
 }
 
 export async function reviewAffiliateStatus(token: string, affiliateId: string, status: string) {
-  return request<any>(`/admin/affiliates/${affiliateId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
+  return request<User>(`/admin/affiliates/${affiliateId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
 }
 
 export async function deleteAdminAffiliate(token: string, affiliateId: string) {
-  return request<any>(`/admin/affiliates/${affiliateId}`, { method: 'DELETE' }, token);
+  return request<{ message: string }>(`/admin/affiliates/${affiliateId}`, { method: 'DELETE' }, token);
 }
 
 export async function getAdminBrands(token: string) {
@@ -283,23 +304,23 @@ export async function getAdminBrands(token: string) {
 }
 
 export async function reviewBrandStatus(token: string, brandId: string, status: string) {
-  return request<any>(`/admin/brands/${brandId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
+  return request<User>(`/admin/brands/${brandId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
 }
 
 export async function deleteAdminBrand(token: string, brandId: string) {
-  return request<any>(`/admin/brands/${brandId}`, { method: 'DELETE' }, token);
+  return request<{ message: string }>(`/admin/brands/${brandId}`, { method: 'DELETE' }, token);
 }
 
 export async function togglePostSponsored(token: string, postId: string) {
-  return request<any>(`/admin/posts/${postId}/sponsored`, { method: 'PATCH' }, token);
+  return request<Post>(`/admin/posts/${postId}/sponsored`, { method: 'PATCH' }, token);
 }
 
 export async function createPayment(token: string, payload: { amount: number; plan: string; paymentStatus: string; transactionId: string }) {
-  return request<any>('/payments', { method: 'POST', body: JSON.stringify(payload) }, token);
+  return request<Payment>('/payments', { method: 'POST', body: JSON.stringify(payload) }, token);
 }
 
 export async function createCommissionRequest(token: string, payload: { requestedCommission: number; reason: string; currentCommission: number }) {
-  return request<any>('/affiliates/commission-request', { method: 'POST', body: JSON.stringify(payload) }, token);
+  return request<{ message: string }>('/affiliates/commission-request', { method: 'POST', body: JSON.stringify(payload) }, token);
 }
 
 export async function getAdminCommissionRequests(token: string) {
@@ -308,5 +329,5 @@ export async function getAdminCommissionRequests(token: string) {
 }
 
 export async function updateAdminCommissionRequest(token: string, requestId: string, payload: { status: string; requestedCommission?: number }) {
-  return request<any>(`/admin/affiliates/commission-requests/${requestId}`, { method: 'PATCH', body: JSON.stringify(payload) }, token);
+  return request<{ message: string }>(`/admin/affiliates/commission-requests/${requestId}`, { method: 'PATCH', body: JSON.stringify(payload) }, token);
 }

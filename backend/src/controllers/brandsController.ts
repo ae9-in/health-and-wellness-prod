@@ -27,7 +27,17 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
       return;
     }
     const brand = await ensureBrand(userId);
-    const { name, category, description, images, price, commissionRate, stock } = req.body;
+    const { name, category, description, images, price, commissionRate, stock, variants } = req.body;
+    
+    let parsedVariants = null;
+    if (variants) {
+      try {
+        parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+      } catch (err) {
+        console.error('Failed to parse variants:', err);
+      }
+    }
+
     const priceValue = Number(price);
     const commissionValue = Number(commissionRate ?? 0);
     const stockValue = Number(stock);
@@ -49,6 +59,7 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
         price: priceValue,
         commissionRate: commissionValue,
         stock: stockValue,
+        variants: parsedVariants || undefined,
         status: ApprovalStatus.PENDING,
       },
     });
