@@ -27,7 +27,7 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
       return;
     }
     const brand = await ensureBrand(userId);
-    const { name, category, description, images, price, commissionRate, stock, variants } = req.body;
+    const { name, category, description, images, imageUrls, price, commissionRate, stock, variants } = req.body;
     
     let parsedVariants = null;
     if (variants) {
@@ -38,22 +38,24 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
       }
     }
 
-    const priceValue = Number(price);
-    const commissionValue = Number(commissionRate ?? 0);
-    const stockValue = Number(stock);
+    const priceValue = parseFloat(price);
+    const commissionValue = parseFloat(commissionRate ?? 0);
+    const stockValue = Math.floor(Number(stock) || 0);
+    
     if (Number.isNaN(priceValue) || Number.isNaN(stockValue) || Number.isNaN(commissionValue)) {
-      res.status(400).json({ error: 'Price, commission rate, and stock must be numbers' });
+      res.status(400).json({ error: 'Price, commission rate, and stock must be valid numbers' });
       return;
     }
+
     const files = req.files as Express.Multer.File[] | undefined;
     const product = await prisma.product.create({
       data: {
         brandId: brand.id,
-        name,
+        name: name.trim(),
         category,
-        description,
+        description: description.trim(),
         images: [
-          ...normalizeImageUrls(images),
+          ...normalizeImageUrls(imageUrls || images), // Look for both for compatibility
           ...(files?.map(f => `/uploads/${f.filename}`) ?? [])
         ],
         price: priceValue,
@@ -79,7 +81,8 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
   } catch (error) {
     console.error('Create product error:', error);
     const message = error instanceof Error ? error.message : 'Unable to create product';
-    res.status(500).json({ error: message });
+    // Return detailed error for debugging
+    res.status(500).json({ error: message, details: error instanceof Error ? error.stack : error });
   }
 }
 

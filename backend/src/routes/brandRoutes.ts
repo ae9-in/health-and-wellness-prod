@@ -11,7 +11,8 @@ router.use(authenticate, authorizeRoles(Role.BRAND));
 const uploadIfMultipart = (req: Request, res: Response, next: NextFunction) => {
   const contentType = (req.headers['content-type'] ?? '').toString();
   if (contentType.startsWith('multipart/')) {
-    upload.array('images', 6)(req, res, next);
+    // We now use 'productImages' for file uploads to avoid collision with string 'images' in req.body
+    upload.array('productImages', 10)(req, res, next);
   } else {
     next();
   }

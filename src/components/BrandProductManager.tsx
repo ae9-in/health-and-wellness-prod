@@ -91,26 +91,26 @@ export default function BrandProductManager() {
         formData.append('description', form.description.trim());
         formData.append('category', form.category.join(', '));
         formData.append('price', price.toString());
-        formData.append('stock', stock.toString());
+        formData.append('stock', Math.floor(stock).toString()); // Ensure integer for Prisma
         formData.append('commissionRate', commissionRate.toString());
         
         // Variants must be stringified for FormData
         formData.append('variants', JSON.stringify(processedVariants));
 
-        // Append image URLs individually
-        imageUrls.forEach(url => formData.append('images', url));
+        // Append image URLs individually as imageUrls
+        imageUrls.forEach(url => formData.append('imageUrls', url));
         
-        // Append selected files to 'images' key
-        selectedFiles.forEach(file => formData.append('images', file));
+        // Append selected files to 'productImages' key
+        selectedFiles.forEach(file => formData.append('productImages', file));
         
-        // Final singular image fallback
+        // Singular fallback for logic
         if (selectedFiles[0]) {
-          formData.set('image', selectedFiles[0]);
+          formData.set('image', 'FILE_UPLOAD'); // Marker
         } else if (imageUrls[0]) {
           formData.set('image', imageUrls[0]);
         }
 
-        console.log('Publishing with FormData:', Array.from(formData.keys()));
+        console.log('Publishing with FormData (productImages):', Array.from(formData.keys()));
         await createBrandProduct(token, formData);
       } else {
         // JSON PATH
@@ -119,10 +119,10 @@ export default function BrandProductManager() {
           category: form.category.join(', '),
           description: form.description.trim(),
           price,
-          stock,
+          stock: Math.floor(stock),
           commissionRate,
-          variants: processedVariants, // Native array for JSON
-          images: imageUrls,
+          variants: processedVariants,
+          imageUrls: imageUrls, // Explicit key
           image: imageUrls[0] || ''
         };
 
