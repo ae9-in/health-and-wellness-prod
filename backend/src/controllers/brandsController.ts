@@ -26,9 +26,22 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-    const brand = await ensureBrand(userId);
     const { name, category, description, images, imageUrls, price, commissionRate, stock, variants } = req.body;
+    const brand = await ensureBrand(userId);
     
+    if (!name || !name.trim()) {
+      res.status(400).json({ error: 'Product name is required' });
+      return;
+    }
+    if (!description || !description.trim()) {
+      res.status(400).json({ error: 'Product description is required' });
+      return;
+    }
+    if (!category || !category.trim()) {
+      res.status(400).json({ error: 'Product category is required' });
+      return;
+    }
+
     let parsedVariants = null;
     if (variants) {
       try {
@@ -42,8 +55,16 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
     const commissionValue = parseFloat(commissionRate ?? 0);
     const stockValue = Math.floor(Number(stock) || 0);
     
-    if (Number.isNaN(priceValue) || Number.isNaN(stockValue) || Number.isNaN(commissionValue)) {
-      res.status(400).json({ error: 'Price, commission rate, and stock must be valid numbers' });
+    if (Number.isNaN(priceValue)) {
+      res.status(400).json({ error: 'A valid price is required' });
+      return;
+    }
+    if (Number.isNaN(stockValue)) {
+      res.status(400).json({ error: 'Stock must be a valid number' });
+      return;
+    }
+    if (Number.isNaN(commissionValue)) {
+      res.status(400).json({ error: 'Commission rate must be a valid number' });
       return;
     }
 

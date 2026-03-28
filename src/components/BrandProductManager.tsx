@@ -68,10 +68,17 @@ export default function BrandProductManager() {
     const hasVariants = form.variants.length > 0;
     const hasImages = form.images.trim().length > 0 || selectedFiles.length > 0 || (isEditing && editingProduct?.images && editingProduct.images.length > 0);
     
-    if (!form.name || form.category.length === 0 || !form.description || (!form.price && !hasVariants) || !hasImages) {
-      toast.error(`Required: Name, Category, Description, Image ${hasVariants ? '' : 'and Price'}`);
-      return;
+    // Auto-add category if user forgot to press Enter but typed something
+    let finalCategories = [...form.category];
+    if (newCategory.trim() && !finalCategories.includes(newCategory.trim())) {
+      finalCategories.push(newCategory.trim());
     }
+
+    if (!form.name.trim()) return toast.error('Product name is required');
+    if (finalCategories.length === 0) return toast.error('Please select or add at least one category');
+    if (!form.description.trim()) return toast.error('Product description is required');
+    if (!form.price && !hasVariants) return toast.error('Product price is required');
+    if (!hasImages) return toast.error('At least one product image is required');
 
     setIsLoading(true);
     try {
@@ -95,7 +102,7 @@ export default function BrandProductManager() {
         const formData = new FormData();
         formData.append('name', form.name.trim());
         formData.append('description', form.description.trim());
-        formData.append('category', form.category.join(', '));
+        formData.append('category', finalCategories.join(', '));
         formData.append('price', price.toString());
         formData.append('stock', Math.floor(stock).toString());
         formData.append('commissionRate', commissionRate.toString());
@@ -112,7 +119,7 @@ export default function BrandProductManager() {
       } else {
         const payload = {
           name: form.name.trim(),
-          category: form.category.join(', '),
+          category: finalCategories.join(', '),
           description: form.description.trim(),
           price,
           stock: Math.floor(stock),

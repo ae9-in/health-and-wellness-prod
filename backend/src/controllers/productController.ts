@@ -10,7 +10,7 @@ export async function getProducts(req: Request, res: Response): Promise<void> {
     };
 
     if (category) {
-      where.category = category as string;
+      where.category = { contains: category as string, mode: 'insensitive' };
     }
 
     if (brandId) {
