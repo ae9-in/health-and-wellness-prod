@@ -23,7 +23,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { formatPrice, parseVariants } from '@/lib/utils';
+import { formatPrice, parseVariants, resolveImageUrl } from '@/lib/utils';
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
@@ -106,8 +106,8 @@ export default function ProductDetails() {
   }
 
   const brandName = product.brand?.name || 'Wellspring Brand';
-  const images = product.images?.length ? product.images : 
-                 (product as any).image ? [(product as any).image] : [
+  const images = product.images?.length ? product.images.map(img => resolveImageUrl(img)) : 
+                 (product as any).image ? [resolveImageUrl((product as any).image)] : [
     'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80',
     'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
     'https://images.unsplash.com/photo-1511688858354-2972323cc320?auto=format&fit=crop&w=800&q=80'
@@ -117,50 +117,53 @@ export default function ProductDetails() {
     <div className="min-h-screen flex flex-col bg-[#FDFCF8]">
       <Navbar />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="mb-8 pt-4">
-          <Link to="/products" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Products
-          </Link>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-12 mb-16">
-          {/* Images Section */}
-          <div className="space-y-4">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="aspect-square rounded-3xl overflow-hidden glass-card border-none shadow-2xl relative group"
-            >
-              <img 
-                src={images[activeImage]} 
-                alt={product.name} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              {product.isPopular && (
-                <div className="absolute top-6 left-6">
-                  <Badge className="bg-amber-500 text-white px-4 py-1 text-sm border-none shadow-lg">
-                    <Star className="w-4 h-4 mr-2 fill-white" /> Community Choice
-                  </Badge>
-                </div>
-              )}
-            </motion.div>
-            
-            <div className="grid grid-cols-4 gap-4">
-              {images.map((img, i) => (
-                <button 
-                  key={i}
-                  onClick={() => setActiveImage(i)}
-                  className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${
-                    activeImage === i ? 'border-primary shadow-md scale-105' : 'border-transparent opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <img src={img} alt={`${product.name} view ${i+1}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
+      <main className="flex-1 w-full max-w-[1920px] mx-auto px-0 md:px-4">
+        <div className="container mx-auto px-4 py-12">
+          <div className="mb-12">
+            <Link to="/products" className="inline-flex items-center text-sm font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-all group">
+              <div className="h-10 w-10 rounded-full bg-white shadow-sm flex items-center justify-center mr-4 group-hover:bg-primary group-hover:text-white transition-all">
+                <ArrowLeft className="w-4 h-4" />
+              </div>
+              Back to Collection
+            </Link>
           </div>
+
+          <div className="grid lg:grid-cols-2 gap-16 mb-24 items-start">
+            {/* Images Section */}
+            <div className="space-y-8 sticky top-24">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="aspect-square rounded-[3.5rem] overflow-hidden glass-card border-none shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] relative group bg-white"
+              >
+                <img 
+                  src={images[activeImage]} 
+                  alt={product.name} 
+                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                />
+                {product.isPopular && (
+                  <div className="absolute top-10 left-10">
+                    <Badge className="bg-amber-500 text-white px-8 py-3 text-sm font-black uppercase tracking-[0.2em] border-none shadow-2xl rounded-2xl">
+                      <Star className="w-4 h-4 mr-3 fill-white" /> Community Choice
+                    </Badge>
+                  </div>
+                )}
+              </motion.div>
+              
+              <div className="grid grid-cols-4 gap-6 px-4">
+                {images.map((img, i) => (
+                  <button 
+                    key={i}
+                    onClick={() => setActiveImage(i)}
+                    className={`aspect-square rounded-[2rem] overflow-hidden border-2 transition-all duration-500 shadow-xl ${
+                      activeImage === i ? 'border-primary shadow-primary/20 scale-110' : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105'
+                    }`}
+                  >
+                    <img src={img} alt={`${product.name} view ${i+1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
 
           {/* Info Section */}
           <div className="flex flex-col justify-center space-y-8">
@@ -322,6 +325,7 @@ export default function ProductDetails() {
               <p className="text-sm font-medium">Verified by Wellspring Community</p>
             </div>
           </div>
+        </div>
         </div>
       </main>
       

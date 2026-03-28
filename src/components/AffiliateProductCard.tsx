@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Copy, ExternalLink, TrendingUp, Info } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, resolveImageUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface AffiliateProductCardProps {
@@ -29,7 +29,7 @@ export default function AffiliateProductCard({ product, referralCode }: Affiliat
     <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-primary/10 glass-card flex flex-col h-full">
       <div className="relative aspect-video overflow-hidden">
         <img 
-          src={product.images?.[0] || (product as any).image || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80'} 
+          src={resolveImageUrl(product.images?.[0] || (product as any).image)} 
           alt={product.name}
           className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
         />

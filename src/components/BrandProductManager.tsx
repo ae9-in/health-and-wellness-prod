@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { getBrandProducts, createBrandProduct, deleteBrandProduct } from '@/lib/api';
 import { Product } from '@/lib/types';
-import { formatPrice, parseVariants } from '@/lib/utils';
+import { formatPrice, parseVariants, resolveImageUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { CATEGORIES } from '@/lib/constants';
@@ -490,9 +490,9 @@ export default function BrandProductManager() {
           >
             <div className="h-24 w-24 rounded-2xl bg-muted/30 overflow-hidden flex-shrink-0">
               {product.images && product.images[0] ? (
-                <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <img src={resolveImageUrl(product.images[0])} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
               ) : (product as any).image ? (
-                <img src={(product as any).image} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <img src={resolveImageUrl((product as any).image)} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-muted-foreground">
                   <ImageIcon className="h-8 w-8" />
