@@ -77,9 +77,9 @@ export default function BrandProductManager() {
         category: form.category.join(', '),
         description: form.description,
         images: form.images ? form.images.split(',').map((img: string) => img.trim()).filter(Boolean) : [],
-        price: parseFloat(form.price) || 0,
+        price: parseFloat(form.price) || (form.variants.length > 0 ? parseFloat(form.variants[0].price) : 0),
         commissionRate: parseFloat(form.commissionRate) || 0,
-        stock: Number(form.stock) || 0,
+        stock: Number(form.stock) || (form.variants.length > 0 ? form.variants.reduce((acc, v) => acc + (v.stock === '' ? 0 : Number(v.stock)), 0) : 0),
         variants: form.variants.length > 0 
           ? JSON.stringify(form.variants.map(v => ({ ...v, stock: v.stock === '' ? 0 : Number(v.stock) }))) 
           : undefined
