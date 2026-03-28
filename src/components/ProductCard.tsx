@@ -17,7 +17,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     <Card className="flex h-full flex-col overflow-hidden rounded-[2rem] border border-slate-100/80 bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl group">
       <Link to={`/products/${product.id}`} className="block relative overflow-hidden aspect-[4/3]">
         <img
-          src={product.images?.[0] || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80'}
+          src={product.images?.[0] || (product as any).image || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80'}
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />

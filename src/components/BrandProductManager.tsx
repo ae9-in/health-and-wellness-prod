@@ -72,11 +72,13 @@ export default function BrandProductManager() {
         }
       }
 
+      const images = form.images ? form.images.split(',').map((img: string) => img.trim()).filter(Boolean) : [];
       const payload = {
         name: form.name,
         category: form.category.join(', '),
         description: form.description,
-        images: form.images ? form.images.split(',').map((img: string) => img.trim()).filter(Boolean) : [],
+        images: images,
+        image: images[0] || '', // Fallback for singular image field
         price: parseFloat(form.price) || (form.variants.length > 0 ? parseFloat(form.variants[0].price) : 0),
         commissionRate: parseFloat(form.commissionRate) || 0,
         stock: Number(form.stock) || (form.variants.length > 0 ? form.variants.reduce((acc, v) => acc + (v.stock === '' ? 0 : Number(v.stock)), 0) : 0),
@@ -91,6 +93,7 @@ export default function BrandProductManager() {
           formData.append(key, value.toString());
         });
         selectedFiles.forEach(file => formData.append('images', file));
+        formData.set('image', selectedFiles[0]); // Set singular image field for compatibility
         await createBrandProduct(token, formData);
       } else {
         await createBrandProduct(token, payload as any);
@@ -488,6 +491,8 @@ export default function BrandProductManager() {
             <div className="h-24 w-24 rounded-2xl bg-muted/30 overflow-hidden flex-shrink-0">
               {product.images && product.images[0] ? (
                 <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              ) : (product as any).image ? (
+                <img src={(product as any).image} alt={product.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-muted-foreground">
                   <ImageIcon className="h-8 w-8" />

@@ -24,6 +24,7 @@ export interface Product {
   category: string;
   stock: number;
   images: string[];
+  image?: string;
   isPopular?: boolean;
   commissionRate: number;
   brandId: string;

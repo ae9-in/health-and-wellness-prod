@@ -106,7 +106,8 @@ export default function ProductDetails() {
   }
 
   const brandName = product.brand?.name || 'Wellspring Brand';
-  const images = product.images?.length ? product.images : [
+  const images = product.images?.length ? product.images : 
+                 (product as any).image ? [(product as any).image] : [
     'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80',
     'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
     'https://images.unsplash.com/photo-1511688858354-2972323cc320?auto=format&fit=crop&w=800&q=80'
