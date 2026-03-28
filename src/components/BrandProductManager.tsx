@@ -48,8 +48,8 @@ export default function BrandProductManager() {
   }, []);
 
   const handleCreate = async () => {
-    if (!form.name || !form.category || !form.description || !form.price || !form.stock) {
-      toast.error('Required fields: Name, Category, Description, Price, Stock');
+    if (!form.name || form.category.length === 0 || !form.description || !form.price) {
+      toast.error('Required fields: Name, Category, Description, Price');
       return;
     }
     setIsLoading(true);
