@@ -73,34 +73,37 @@ export default function BrandProductManager() {
       }
 
       const imageUrls = form.images ? form.images.split(',').map((img: string) => img.trim()).filter(Boolean) : [];
-      const payload = {
-        name: form.name.trim(),
-        category: form.category.join(', '),
-        description: form.description.trim(),
-        price: parseFloat(form.price) || (form.variants.length > 0 ? parseFloat(form.variants[0].price) : 0),
-        commissionRate: parseFloat(form.commissionRate) || 0,
-        stock: Number(form.stock) || (form.variants.length > 0 ? form.variants.reduce((acc, v) => acc + (v.stock === '' ? 0 : Number(v.stock)), 0) : 0),
-        variants: form.variants.length > 0 
-          ? JSON.stringify(form.variants.map(v => ({ ...v, stock: v.stock === '' ? 0 : Number(v.stock) }))) 
-          : undefined,
-        images: imageUrls
-      };
+      
+      const price = parseFloat(form.price) || (form.variants.length > 0 ? parseFloat(form.variants[0].price) : 0);
+      const stock = Number(form.stock) || (form.variants.length > 0 ? form.variants.reduce((acc, v) => acc + (v.stock === '' ? 0 : Number(v.stock)), 0) : 0);
+      const commissionRate = parseFloat(form.commissionRate) || 0;
+      
+      const processedVariants = form.variants.map(v => ({ 
+        ...v, 
+        price: parseFloat(v.price) || price,
+        stock: v.stock === '' ? 0 : Number(v.stock) 
+      }));
 
       if (selectedFiles.length > 0) {
+        // MULTIPART/FORM-DATA PATH
         const formData = new FormData();
-        // Append all text fields
-        Object.entries(payload).forEach(([key, value]) => {
-          if (key === 'images') return; // Skip image URLs for now
-          if (value !== undefined) formData.append(key, value.toString());
-        });
+        formData.append('name', form.name.trim());
+        formData.append('description', form.description.trim());
+        formData.append('category', form.category.join(', '));
+        formData.append('price', price.toString());
+        formData.append('stock', stock.toString());
+        formData.append('commissionRate', commissionRate.toString());
+        
+        // Variants must be stringified for FormData
+        formData.append('variants', JSON.stringify(processedVariants));
 
-        // Append image URLs individually if any
+        // Append image URLs individually
         imageUrls.forEach(url => formData.append('images', url));
         
         // Append selected files to 'images' key
         selectedFiles.forEach(file => formData.append('images', file));
         
-        // Ensure 'image' singular fallback
+        // Final singular image fallback
         if (selectedFiles[0]) {
           formData.set('image', selectedFiles[0]);
         } else if (imageUrls[0]) {
@@ -110,8 +113,21 @@ export default function BrandProductManager() {
         console.log('Publishing with FormData:', Array.from(formData.keys()));
         await createBrandProduct(token, formData);
       } else {
-        console.log('Publishing with JSON:', payload);
-        await createBrandProduct(token, payload as any);
+        // JSON PATH
+        const jsonPayload = {
+          name: form.name.trim(),
+          category: form.category.join(', '),
+          description: form.description.trim(),
+          price,
+          stock,
+          commissionRate,
+          variants: processedVariants, // Native array for JSON
+          images: imageUrls,
+          image: imageUrls[0] || ''
+        };
+
+        console.log('Publishing with JSON:', jsonPayload);
+        await createBrandProduct(token, jsonPayload as any);
       }
       setForm({ name: '', category: [], description: '', images: '', price: '', commissionRate: '', stock: '', variants: [] });
       previewUrls.forEach(url => URL.revokeObjectURL(url));
