@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
+import { socket } from '@/lib/socket';
 
 const defaultFilters = {
   category: '',
@@ -34,15 +35,7 @@ const FALLBACK_PRODUCTS: Product[] = [
     status: 'APPROVED',
     brandId: 'brand-calm-collective',
     brand: { id: 'brand-calm-collective', name: 'Calm Collective', description: undefined, website: undefined, logo: undefined },
-    likes: [],
-    comments: [],
-    savedUsers: [],
-    authorId: 'brand-calm-collective',
-    authorName: 'Calm Collective',
-    authorRole: 'BRAND',
-    postType: 'ARTICLE',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: new Date().toISOString()
   },
   {
     id: 'fallback-fitness-1',
@@ -57,15 +50,7 @@ const FALLBACK_PRODUCTS: Product[] = [
     status: 'APPROVED',
     brandId: 'brand-motion-pulse',
     brand: { id: 'brand-motion-pulse', name: 'Motion Pulse', description: undefined, website: undefined, logo: undefined },
-    likes: [],
-    comments: [],
-    savedUsers: [],
-    authorId: 'brand-motion-pulse',
-    authorName: 'Motion Pulse',
-    authorRole: 'BRAND',
-    postType: 'ARTICLE',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: new Date().toISOString()
   },
   {
     id: 'fallback-nutrition-1',
@@ -80,15 +65,7 @@ const FALLBACK_PRODUCTS: Product[] = [
     status: 'APPROVED',
     brandId: 'brand-vital-roots',
     brand: { id: 'brand-vital-roots', name: 'Vital Roots', description: undefined, website: undefined, logo: undefined },
-    likes: [],
-    comments: [],
-    savedUsers: [],
-    authorId: 'brand-vital-roots',
-    authorName: 'Vital Roots',
-    authorRole: 'BRAND',
-    postType: 'ARTICLE',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: new Date().toISOString()
   },
   {
     id: 'fallback-lifestyle-1',
@@ -103,15 +80,7 @@ const FALLBACK_PRODUCTS: Product[] = [
     status: 'APPROVED',
     brandId: 'brand-daylight-studio',
     brand: { id: 'brand-daylight-studio', name: 'Daylight Studio', description: undefined, website: undefined, logo: undefined },
-    likes: [],
-    comments: [],
-    savedUsers: [],
-    authorId: 'brand-daylight-studio',
-    authorName: 'Daylight Studio',
-    authorRole: 'BRAND',
-    postType: 'ARTICLE',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: new Date().toISOString()
   },
   {
     id: 'fallback-chronic-1',
@@ -150,15 +119,7 @@ const FALLBACK_PRODUCTS: Product[] = [
     status: 'APPROVED',
     brandId: 'brand-grounded-soul',
     brand: { id: 'brand-grounded-soul', name: 'Grounded Soul', description: undefined, website: undefined, logo: undefined },
-    likes: [],
-    comments: [],
-    savedUsers: [],
-    authorId: 'brand-grounded-soul',
-    authorName: 'Grounded Soul',
-    authorRole: 'BRAND',
-    postType: 'ARTICLE',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: new Date().toISOString()
   },
   {
     id: 'fallback-ayurveda-1',
@@ -173,15 +134,7 @@ const FALLBACK_PRODUCTS: Product[] = [
     status: 'APPROVED',
     brandId: 'brand-ayur-life',
     brand: { id: 'brand-ayur-life', name: 'AyurLife', description: undefined, website: undefined, logo: undefined },
-    likes: [],
-    comments: [],
-    savedUsers: [],
-    authorId: 'brand-ayur-life',
-    authorName: 'AyurLife',
-    authorRole: 'BRAND',
-    postType: 'ARTICLE',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: new Date().toISOString()
   },
   {
     id: 'fallback-weight-1',
@@ -196,15 +149,7 @@ const FALLBACK_PRODUCTS: Product[] = [
     status: 'APPROVED',
     brandId: 'brand-restoro',
     brand: { id: 'brand-restoro', name: 'Restoro Botanicals', description: undefined, website: undefined, logo: undefined },
-    likes: [],
-    comments: [],
-    savedUsers: [],
-    authorId: 'brand-restoro',
-    authorName: 'Restoro Botanicals',
-    authorRole: 'BRAND',
-    postType: 'ARTICLE',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: new Date().toISOString()
   }
 ];
 
@@ -270,6 +215,22 @@ export default function Products() {
     }, 300); // Debounce
     return () => clearTimeout(timer);
   }, [filters]);
+
+  useEffect(() => {
+    const handleProductChange = () => {
+      fetchProducts();
+    };
+
+    socket.on('product:created', handleProductChange);
+    socket.on('product:updated', handleProductChange);
+    socket.on('product:deleted', handleProductChange);
+
+    return () => {
+      socket.off('product:created', handleProductChange);
+      socket.off('product:updated', handleProductChange);
+      socket.off('product:deleted', handleProductChange);
+    };
+  }, []);
 
   const clearFilters = () => {
     setFilters({ ...defaultFilters });

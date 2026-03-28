@@ -216,6 +216,26 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, [addGrowthPoint]);
 
+  useEffect(() => {
+    const handleRefresh = () => {
+      queryClient.invalidateQueries();
+    };
+
+    socket.on('product:created', handleRefresh);
+    socket.on('product:updated', handleRefresh);
+    socket.on('product:deleted', handleRefresh);
+    socket.on('user:created', handleRefresh);
+    socket.on('post:created', handleRefresh);
+
+    return () => {
+      socket.off('product:created', handleRefresh);
+      socket.off('product:updated', handleRefresh);
+      socket.off('product:deleted', handleRefresh);
+      socket.off('user:created', handleRefresh);
+      socket.off('post:created', handleRefresh);
+    };
+  }, [queryClient]);
+
   // Mutations
   const mutationOptions = {
     onSuccess: () => queryClient.invalidateQueries()

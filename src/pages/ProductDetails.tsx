@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatPrice, parseVariants, resolveImageUrl } from '@/lib/utils';
+import { socket } from '@/lib/socket';
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
@@ -76,6 +77,21 @@ export default function ProductDetails() {
       }
     };
     fetchProduct();
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const handleProductUpdate = (updatedProduct: any) => {
+      if (updatedProduct.id === id) {
+        setProduct(updatedProduct);
+      }
+    };
+
+    socket.on('product:updated', handleProductUpdate);
+    return () => {
+      socket.off('product:updated', handleProductUpdate);
+    };
   }, [id]);
 
   if (loading) {

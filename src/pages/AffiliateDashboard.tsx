@@ -45,8 +45,9 @@ import {
 } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { socket } from '@/lib/socket';
 import { getProducts, getAffiliateDashboard, createCommissionRequest } from '@/lib/api';
 import { CATEGORIES } from '@/lib/constants';
 import type { Product } from '@/lib/types';
@@ -109,11 +110,34 @@ export default function AffiliateDashboard() {
         });
     }, 400);
 
+    const handleProductChange = () => {
+      getProducts({
+        search: filters.search,
+        category: filters.category !== 'all' ? filters.category : '',
+        limit: 12
+      }).then(data => {
+        if (isMounted) setProducts(data?.products || data || []);
+      });
+    };
+
+    const handleCommissionChange = () => {
+      queryClient.invalidateQueries({ queryKey: ['affiliate-dashboard'] });
+    };
+
+    socket.on('product:created', handleProductChange);
+    socket.on('product:updated', handleProductChange);
+    socket.on('product:deleted', handleProductChange);
+    socket.on('commission:updated', handleCommissionChange);
+
     return () => {
       isMounted = false;
       clearTimeout(timer);
+      socket.off('product:created', handleProductChange);
+      socket.off('product:updated', handleProductChange);
+      socket.off('product:deleted', handleProductChange);
+      socket.off('commission:updated', handleCommissionChange);
     };
-  }, [filters]);
+  }, [filters, queryClient]);
 
   useEffect(() => {
     // Priority: Custom Commission > Tiered Commission

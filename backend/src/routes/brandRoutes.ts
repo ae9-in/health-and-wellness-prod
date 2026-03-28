@@ -20,7 +20,7 @@ const uploadIfMultipart = (req: Request, res: Response, next: NextFunction) => {
 
 router.get('/products', listBrandProducts);
 router.post('/products', uploadIfMultipart, createProduct);
-router.put('/products/:productId', updateProduct);
+router.put('/products/:productId', uploadIfMultipart, updateProduct);
 router.delete('/products/:productId', deleteProduct);
 router.get('/dashboard', getBrandDashboard);
 router.get('/notifications', getBrandNotifications);

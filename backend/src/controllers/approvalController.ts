@@ -162,6 +162,7 @@ export async function reviewProduct(req: any & RealtimeRequest, res: Response): 
     );
     
     req.io?.emit('approvals:product', product);
+    req.io?.emit('product:updated', product);
 
     res.json({ product });
   } catch (error) {

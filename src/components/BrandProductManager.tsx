@@ -3,19 +3,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { getBrandProducts, createBrandProduct, deleteBrandProduct } from '@/lib/api';
+import { getBrandProducts, createBrandProduct, deleteBrandProduct, updateBrandProduct } from '@/lib/api';
 import { Product } from '@/lib/types';
 import { formatPrice, parseVariants, resolveImageUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { CATEGORIES } from '@/lib/constants';
-import { Package, Plus, Trash2, Image as ImageIcon, IndianRupee, Tag, Info, ListFilter, X } from 'lucide-react';
+import { Package, Plus, Trash2, Image as ImageIcon, IndianRupee, Tag, Info, ListFilter, X, Edit, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { socket } from '@/lib/socket';
 
 export default function BrandProductManager() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [form, setForm] = useState({
     name: '',
     category: [] as string[],
@@ -45,35 +47,38 @@ export default function BrandProductManager() {
 
   useEffect(() => {
     loadProducts();
+
+    const handleProductChange = () => {
+      loadProducts();
+    };
+
+    socket.on('product:created', handleProductChange);
+    socket.on('product:updated', handleProductChange);
+    socket.on('product:deleted', handleProductChange);
+
+    return () => {
+      socket.off('product:created', handleProductChange);
+      socket.off('product:updated', handleProductChange);
+      socket.off('product:deleted', handleProductChange);
+    };
   }, []);
 
-  const handleCreate = async () => {
+  const handleCreateOrUpdate = async () => {
+    const isEditing = !!editingProduct;
     const hasVariants = form.variants.length > 0;
-    const hasImages = form.images.trim().length > 0 || selectedFiles.length > 0;
+    const hasImages = form.images.trim().length > 0 || selectedFiles.length > 0 || (isEditing && editingProduct?.images && editingProduct.images.length > 0);
+    
     if (!form.name || form.category.length === 0 || !form.description || (!form.price && !hasVariants) || !hasImages) {
       toast.error(`Required: Name, Category, Description, Image ${hasVariants ? '' : 'and Price'}`);
       return;
     }
+
     setIsLoading(true);
     try {
       const token = localStorage.getItem('wellnest_token');
       if (!token) throw new Error('Not authenticated');
 
-      // Validation
-      if (form.variants.length > 0) {
-        const seen = new Set();
-        for (const v of form.variants) {
-          if (!v.quantity || parseFloat(v.quantity) <= 0) throw new Error('Variant weight must be > 0');
-          if (!v.price || parseFloat(v.price) <= 0) throw new Error('Variant price must be > 0');
-          if (v.stock !== '' && Number(v.stock) < 0) throw new Error('Variant stock cannot be negative');
-          
-          const combo = `${v.quantity}${v.unit}`;
-          if (seen.has(combo)) throw new Error(`Duplicate variant: ${combo}`);
-          seen.add(combo);
-        }
-      }
-
-      const imageUrls = form.images ? form.images.split(',').map((img: string) => img.trim()).filter(Boolean) : [];
+      const imageUrls = form.images ? form.images.split(',').map((img: string) => img.trim()).filter(Boolean) : (isEditing ? editingProduct?.images : []) || [];
       
       const price = parseFloat(form.price) || (form.variants.length > 0 ? parseFloat(form.variants[0].price) : 0);
       const stock = Number(form.stock) || (form.variants.length > 0 ? form.variants.reduce((acc, v) => acc + (v.stock === '' ? 0 : Number(v.stock)), 0) : 0);
@@ -85,37 +90,27 @@ export default function BrandProductManager() {
         stock: v.stock === '' ? 0 : Number(v.stock) 
       }));
 
+      let result;
       if (selectedFiles.length > 0) {
-        // MULTIPART/FORM-DATA PATH
         const formData = new FormData();
         formData.append('name', form.name.trim());
         formData.append('description', form.description.trim());
         formData.append('category', form.category.join(', '));
         formData.append('price', price.toString());
-        formData.append('stock', Math.floor(stock).toString()); // Ensure integer for Prisma
+        formData.append('stock', Math.floor(stock).toString());
         formData.append('commissionRate', commissionRate.toString());
-        
-        // Variants must be stringified for FormData
         formData.append('variants', JSON.stringify(processedVariants));
-
-        // Append image URLs individually as imageUrls
+        
         imageUrls.forEach(url => formData.append('imageUrls', url));
-        
-        // Append selected files to 'productImages' key
         selectedFiles.forEach(file => formData.append('productImages', file));
-        
-        // Singular fallback for logic
-        if (selectedFiles[0]) {
-          formData.set('image', 'FILE_UPLOAD'); // Marker
-        } else if (imageUrls[0]) {
-          formData.set('image', imageUrls[0]);
-        }
 
-        console.log('Publishing with FormData (productImages):', Array.from(formData.keys()));
-        await createBrandProduct(token, formData);
+        if (isEditing) {
+          result = await updateBrandProduct(token, editingProduct!.id, formData);
+        } else {
+          result = await createBrandProduct(token, formData);
+        }
       } else {
-        // JSON PATH
-        const jsonPayload = {
+        const payload = {
           name: form.name.trim(),
           category: form.category.join(', '),
           description: form.description.trim(),
@@ -123,26 +118,51 @@ export default function BrandProductManager() {
           stock: Math.floor(stock),
           commissionRate,
           variants: processedVariants,
-          imageUrls: imageUrls, // Explicit key
+          imageUrls: imageUrls,
           image: imageUrls[0] || ''
         };
 
-        console.log('Publishing with JSON:', jsonPayload);
-        await createBrandProduct(token, jsonPayload as any);
+        if (isEditing) {
+          result = await updateBrandProduct(token, editingProduct!.id, payload as any);
+        } else {
+          result = await createBrandProduct(token, payload as any);
+        }
       }
-      setForm({ name: '', category: [], description: '', images: '', price: '', commissionRate: '', stock: '', variants: [] });
-      previewUrls.forEach(url => URL.revokeObjectURL(url));
-      setPreviewUrls([]);
-      setSelectedFiles([]);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      setShowAddForm(false);
-      loadProducts();
-      toast.success('Product submitted for review!');
+
+      toast.success(isEditing ? 'Product updated successfully' : 'Product submitted for review!');
+      resetForm();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create product');
+      toast.error(err.message || 'Action failed');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setForm({ name: '', category: [], description: '', images: '', price: '', commissionRate: '', stock: '', variants: [] });
+    previewUrls.forEach(url => URL.revokeObjectURL(url));
+    setPreviewUrls([]);
+    setSelectedFiles([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setShowAddForm(false);
+    setEditingProduct(null);
+    loadProducts();
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setForm({
+      name: product.name,
+      category: product.category.split(',').map(c => c.trim()),
+      description: product.description,
+      images: (product.images || []).join(', '),
+      price: product.price?.toString() || '',
+      commissionRate: product.commissionRate?.toString() || '',
+      stock: product.stock?.toString() || '',
+      variants: parseVariants(product.variants)
+    });
+    setShowAddForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (productId: string) => {
@@ -167,7 +187,10 @@ export default function BrandProductManager() {
           <h3 className="font-bold text-xl text-[#1A2E05]">Product Catalog</h3>
         </div>
         <Button 
-          onClick={() => setShowAddForm(!showAddForm)} 
+          onClick={() => {
+            if (showAddForm) resetForm();
+            else setShowAddForm(true);
+          }} 
           variant={showAddForm ? 'outline' : 'default'}
           className="rounded-xl h-10 font-bold gap-2"
         >
@@ -501,10 +524,10 @@ export default function BrandProductManager() {
 
               <Button 
                 className="w-full h-14 rounded-2xl text-lg font-black shadow-xl shadow-primary/20" 
-                onClick={handleCreate}
+                onClick={handleCreateOrUpdate}
                 disabled={isLoading}
               >
-                {isLoading ? 'Uploading...' : 'Publish Product'}
+                {isLoading ? 'Processing...' : editingProduct ? 'Save Changes' : 'Publish Product'}
               </Button>
             </div>
           </motion.div>
@@ -568,9 +591,19 @@ export default function BrandProductManager() {
                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Price</p>
                 <p className="text-xl font-black">{formatPrice(product.price)}</p>
               </div>
-              <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-destructive hover:bg-destructive/10" onClick={() => handleDelete(product.id)}>
-                <Trash2 className="h-5 w-5" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-10 w-10 rounded-xl text-primary hover:bg-primary/10" 
+                  onClick={() => handleEdit(product)}
+                >
+                  <Edit className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-destructive hover:bg-destructive/10" onClick={() => handleDelete(product.id)}>
+                  <Trash2 className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </motion.div>
         ))}

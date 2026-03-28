@@ -62,7 +62,7 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
         commissionRate: commissionValue,
         stock: stockValue,
         variants: parsedVariants || undefined,
-        status: ApprovalStatus.APPROVED, // Make visible immediately for "realtime" experience
+        status: ApprovalStatus.PENDING,
       },
     });
 
@@ -133,15 +133,60 @@ export async function updateProduct(req: AuthRequest, res: Response): Promise<vo
       return;
     }
     const brand = await ensureBrand(userId);
+    const { name, category, description, images, imageUrls, price, commissionRate, stock, variants } = req.body;
+
+    const updateData: any = {};
+    if (name) updateData.name = name.trim();
+    if (category) updateData.category = category;
+    if (description) updateData.description = description.trim();
+    
+    if (price !== undefined) updateData.price = parseFloat(price);
+    if (commissionRate !== undefined) updateData.commissionRate = parseFloat(commissionRate);
+    if (stock !== undefined) updateData.stock = Math.floor(Number(stock));
+
+    if (variants) {
+      try {
+        updateData.variants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+      } catch (err) {
+        console.error('Failed to parse variants for update:', err);
+      }
+    }
+
+    const files = req.files as Express.Multer.File[] | undefined;
+    const existingImages = normalizeImageUrls(imageUrls || images);
+    const newFiles = files?.map(f => `/uploads/${f.filename}`) ?? [];
+    
+    if (existingImages.length > 0 || newFiles.length > 0) {
+      updateData.images = [...existingImages, ...newFiles];
+    }
+
     const product = await prisma.product.updateMany({
       where: { id: productId, brandId: brand.id },
-      data: req.body,
+      data: updateData,
     });
+
     if (product.count === 0) {
       res.status(404).json({ error: 'Product not found' });
       return;
     }
-    res.json({ success: true });
+
+    const updatedProduct = await prisma.product.findUnique({
+      where: { id: productId },
+      include: { 
+        brand: { 
+          select: { 
+            id: true, 
+            user: { select: { fullName: true } } 
+          } 
+        } 
+      }
+    });
+
+    if (updatedProduct) {
+      (req as any).io.emit('product:updated', updatedProduct);
+    }
+    
+    res.json({ success: true, product: updatedProduct });
   } catch (error) {
     console.error('Update product error:', error);
     res.status(500).json({ error: 'Unable to update product' });

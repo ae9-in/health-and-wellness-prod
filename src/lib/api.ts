@@ -266,6 +266,18 @@ export async function deleteBrandProduct(token: string, id: string) {
   return request<any>(`/brands/products/${id}`, { method: 'DELETE' }, token);
 }
 
+export async function updateBrandProduct(token: string, id: string, product: Partial<Product> | FormData) {
+  const isFormData = product instanceof FormData;
+  return request<Product>(
+    `/brands/products/${id}`,
+    {
+      method: 'PUT',
+      body: isFormData ? product : JSON.stringify(product),
+    },
+    token
+  );
+}
+
 export async function updateAffiliateProfile(token: string, profile: Partial<User>) {
   return request<User>('/user/affiliate-profile', { method: 'PUT', body: JSON.stringify(profile) }, token);
 }
