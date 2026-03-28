@@ -47,7 +47,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       <CardFooter className="flex items-center justify-between gap-2 border-t border-slate-100/60 px-5 py-4">
         <div className="text-xl font-bold text-primary">
-          {formatPrice(product.price)}
+          {formatPrice(Number(product.price || 0))}
         </div>
         <Button size="sm" className="rounded-full h-10 w-10 p-0 shadow-md">
           <ShoppingCart className="h-4 w-4" />

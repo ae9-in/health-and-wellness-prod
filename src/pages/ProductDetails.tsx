@@ -106,11 +106,10 @@ export default function ProductDetails() {
   }
 
   const brandName = product.brand?.name || 'Wellspring Brand';
-  const images = product.images?.length ? product.images.map(img => resolveImageUrl(img)) : 
+  const images = product.images?.length > 0 ? product.images.map(img => resolveImageUrl(img)) : 
                  (product as any).image ? [resolveImageUrl((product as any).image)] : [
-    'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1511688858354-2972323cc320?auto=format&fit=crop&w=800&q=80'
+    'https://images.unsplash.com/photo-1540344484110-2c93d80db616?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80'
   ];
 
   return (
@@ -181,18 +180,20 @@ export default function ProductDetails() {
                 <div className="text-3xl font-bold text-primary">
                   {(() => {
                     const variants = parseVariants(product.variants);
-                    const price = (selectedVariantIdx !== null && variants[selectedVariantIdx]?.price)
-                      ? parseFloat(variants[selectedVariantIdx].price) 
-                      : (product.price || 0);
+                    const rawPrice = (selectedVariantIdx !== null && variants[selectedVariantIdx]?.price)
+                      ? variants[selectedVariantIdx].price
+                      : product.price;
+                    const price = Number(rawPrice) || 0;
                     return formatPrice(price);
                   })()}
                 </div>
                 <Badge variant="outline" className="text-green-600 bg-green-50 border-green-200">
                   <CircleCheck className="w-3 h-3 mr-1" /> In Stock {(() => {
                     const variants = parseVariants(product.variants);
-                    const stock = (selectedVariantIdx !== null && variants[selectedVariantIdx]?.stock !== undefined)
+                    const rawStock = (selectedVariantIdx !== null && variants[selectedVariantIdx]?.stock !== undefined)
                       ? variants[selectedVariantIdx].stock
-                      : (product.stock || 0);
+                      : product.stock;
+                    const stock = Number(rawStock) || 0;
                     return `(${stock})`;
                   })()}
                 </Badge>
