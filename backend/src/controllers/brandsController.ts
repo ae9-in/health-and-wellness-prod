@@ -62,7 +62,7 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
         commissionRate: commissionValue,
         stock: stockValue,
         variants: parsedVariants || undefined,
-        status: ApprovalStatus.PENDING,
+        status: ApprovalStatus.APPROVED, // Make visible immediately for "realtime" experience
       },
     });
 
