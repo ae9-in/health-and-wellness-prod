@@ -53,6 +53,21 @@ export default function BrandProductManager() {
     try {
       const token = localStorage.getItem('wellnest_token');
       if (!token) throw new Error('Not authenticated');
+
+      // Validation
+      if (form.variants.length > 0) {
+        const seen = new Set();
+        for (const v of form.variants) {
+          if (!v.quantity || parseFloat(v.quantity) <= 0) throw new Error('Variant weight must be > 0');
+          if (!v.price || parseFloat(v.price) <= 0) throw new Error('Variant price must be > 0');
+          if (v.stock === '' || Number(v.stock) < 0) throw new Error('Variant stock cannot be negative');
+          
+          const combo = `${v.quantity}${v.unit}`;
+          if (seen.has(combo)) throw new Error(`Duplicate variant: ${combo}`);
+          seen.add(combo);
+        }
+      }
+
       const payload = {
         name: form.name,
         category: form.category,
@@ -202,7 +217,7 @@ export default function BrandProductManager() {
               <div className="space-y-4 pt-4 border-t border-border/40">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Product Variants</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Product Variants (Weight-Based)</Label>
                     <div className="p-1 bg-primary/10 rounded-full text-primary">
                       <Plus className="h-3 w-3" />
                     </div>
@@ -212,127 +227,136 @@ export default function BrandProductManager() {
                     variant="ghost" 
                     size="sm" 
                     className="h-8 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/5"
-                    onClick={() => setForm(f => ({
-                      ...f, 
-                      variants: [...f.variants, { quantity: '', unit: 'ml', size: '', price: f.price, stock: f.stock }]
-                    }))}
+                    onClick={() => {
+                      const newVariant = { 
+                        quantity: '', 
+                        unit: 'g', 
+                        size: '', 
+                        price: form.price, 
+                        stock: form.stock,
+                        sku: ''
+                      };
+                      setForm(f => ({
+                        ...f, 
+                        variants: [...f.variants, newVariant]
+                      }));
+                    }}
                   >
                     + Add Variant
                   </Button>
                 </div>
 
-                <div className="space-y-4">
-                  {form.variants.map((variant, idx) => (
-                    <div key={idx} className="bg-white/50 rounded-2xl p-4 border border-border/40 relative group/variant">
-                      <Button 
-                        type="button"
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-50 text-red-500 border border-red-100 opacity-0 group-hover/variant:opacity-100 transition-opacity z-10"
-                        onClick={() => setForm(f => ({
-                          ...f,
-                          variants: f.variants.filter((_, i) => i !== idx)
-                        }))}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        <div className="space-y-1">
-                          <Label className="text-[9px] font-bold text-muted-foreground uppercase">Qty</Label>
-                          <Input 
-                            type="number" 
-                            className="h-9 rounded-lg text-xs" 
-                            value={variant.quantity} 
-                            onChange={e => {
-                              const val = e.target.value;
-                              setForm(f => {
-                                const newVariants = [...f.variants];
-                                let sizeSuggestion = variant.size;
-                                if (val) {
-                                  const q = parseFloat(val);
-                                  if (variant.unit === 'ml') {
-                                    if (q < 200) sizeSuggestion = 'Small';
-                                    else if (q < 500) sizeSuggestion = 'Medium';
-                                    else sizeSuggestion = 'Large';
-                                  }
-                                }
-                                newVariants[idx] = { ...variant, quantity: val, size: sizeSuggestion };
-                                return { ...f, variants: newVariants };
-                              });
-                            }}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[9px] font-bold text-muted-foreground uppercase">Unit</Label>
-                          <select 
-                            className="w-full h-9 rounded-lg border border-border/60 bg-white text-xs px-2 focus:ring-1 focus:ring-primary outline-none"
-                            value={variant.unit}
-                            onChange={e => {
-                              setForm(f => {
-                                const newVariants = [...f.variants];
-                                newVariants[idx] = { ...variant, unit: e.target.value };
-                                return { ...f, variants: newVariants };
-                              });
-                            }}
-                          >
-                            {['ml', 'liter', 'gram', 'kg', 'pieces', 'tablets', 'capsules'].map(u => (
-                              <option key={u} value={u}>{u}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[9px] font-bold text-muted-foreground uppercase">Size / Label</Label>
-                          <Input 
-                            className="h-9 rounded-lg text-xs" 
-                            placeholder="e.g. Medium"
-                            value={variant.size} 
-                            onChange={e => {
-                              setForm(f => {
-                                const newVariants = [...f.variants];
-                                newVariants[idx] = { ...variant, size: e.target.value };
-                                return { ...f, variants: newVariants };
-                              });
-                            }}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[9px] font-bold text-muted-foreground uppercase">Price (₹)</Label>
-                          <Input 
-                            type="number" 
-                            className="h-9 rounded-lg text-xs" 
-                            value={variant.price} 
-                            onChange={e => {
-                              setForm(f => {
-                                const newVariants = [...f.variants];
-                                newVariants[idx] = { ...variant, price: e.target.value };
-                                return { ...f, variants: newVariants };
-                              });
-                            }}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[9px] font-bold text-muted-foreground uppercase">Stock</Label>
-                          <Input 
-                            type="number" 
-                            className="h-9 rounded-lg text-xs" 
-                            value={variant.stock} 
-                            onChange={e => {
-                              setForm(f => {
-                                const newVariants = [...f.variants];
-                                newVariants[idx] = { ...variant, stock: e.target.value };
-                                return { ...f, variants: newVariants };
-                              });
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto rounded-2xl border border-border/40 bg-white/50">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-muted/50 border-b border-border/40">
+                        <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground w-20">Weight</th>
+                        <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground w-24">Unit</th>
+                        <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground w-28">Price (₹)</th>
+                        <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground w-24">Stock</th>
+                        <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">SKU (Auto)</th>
+                        <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground w-12 text-center"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/20">
+                      {form.variants.map((variant, idx) => (
+                        <tr key={idx} className="group/row hover:bg-white transition-colors">
+                          <td className="px-4 py-3">
+                            <Input 
+                              type="number" 
+                              className="h-8 rounded-lg text-xs" 
+                              value={variant.quantity} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setForm(f => {
+                                  const newVariants = [...f.variants];
+                                  const sku = `${f.name.substring(0, 3).toUpperCase()}-${val}${variant.unit}`.replace(/\s+/g, '');
+                                  newVariants[idx] = { ...variant, quantity: val, sku };
+                                  return { ...f, variants: newVariants };
+                                });
+                              }}
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <select 
+                              className="w-full h-8 rounded-lg border border-border/60 bg-white text-xs px-1 focus:ring-1 focus:ring-primary outline-none"
+                              value={variant.unit}
+                              onChange={e => {
+                                const unit = e.target.value;
+                                setForm(f => {
+                                  const newVariants = [...f.variants];
+                                  const sku = `${f.name.substring(0, 3).toUpperCase()}-${variant.quantity}${unit}`.replace(/\s+/g, '');
+                                  newVariants[idx] = { ...variant, unit, sku };
+                                  return { ...f, variants: newVariants };
+                                });
+                              }}
+                            >
+                              {['g', 'kg', 'ml', 'L'].map(u => (
+                                <option key={u} value={u}>{u}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input 
+                              type="number" 
+                              className="h-8 rounded-lg text-xs" 
+                              value={variant.price} 
+                              onChange={e => {
+                                setForm(f => {
+                                  const newVariants = [...f.variants];
+                                  newVariants[idx] = { ...variant, price: e.target.value };
+                                  return { ...f, variants: newVariants };
+                                });
+                              }}
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input 
+                              type="number" 
+                              className="h-8 rounded-lg text-xs" 
+                              value={variant.stock} 
+                              onChange={e => {
+                                setForm(f => {
+                                  const newVariants = [...f.variants];
+                                  newVariants[idx] = { ...variant, stock: e.target.value };
+                                  return { ...f, variants: newVariants };
+                                });
+                              }}
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input 
+                              className="h-8 rounded-lg text-[10px] font-mono bg-muted/30" 
+                              placeholder="AUTO-GEN"
+                              value={variant.sku} 
+                              readOnly
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Button 
+                              type="button"
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7 rounded-full hover:bg-red-50 hover:text-red-500 opacity-0 group-hover/row:opacity-100 transition-opacity"
+                              onClick={() => setForm(f => ({
+                                ...f,
+                                variants: f.variants.filter((_, i) => i !== idx)
+                              }))}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                   
                   {form.variants.length === 0 && (
-                    <div className="py-6 border-2 border-dashed border-border/30 rounded-[2rem] text-center">
-                      <p className="text-[11px] text-muted-foreground font-medium">No variants added. Click "+ Add Variant" to include multiple sizes.</p>
+                    <div className="py-10 text-center">
+                      <div className="inline-flex p-3 bg-muted rounded-full mb-3">
+                        <ListFilter className="h-5 w-5 text-muted-foreground opacity-40" />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground font-medium">Click "+ Add Variant" to set different sizes/weights.</p>
                     </div>
                   )}
                 </div>

@@ -212,19 +212,20 @@ export default function ProductDetails() {
                         <button
                           key={idx}
                           onClick={() => setSelectedVariantIdx(idx)}
-                          className={`px-4 py-3 rounded-2xl border-2 transition-all flex flex-col items-center min-w-[80px] ${
+                          className={`px-5 py-4 rounded-2xl border-2 transition-all flex flex-col items-center min-w-[100px] gap-1 ${
                             selectedVariantIdx === idx 
-                              ? 'border-primary bg-primary/5 shadow-md' 
-                              : 'border-primary/10 bg-white hover:border-primary/30'
+                              ? 'border-primary bg-primary/10 shadow-lg scale-105' 
+                              : 'border-primary/10 bg-white hover:border-primary/30 hover:scale-[1.02]'
                           }`}
                         >
-                          <span className={`text-xs font-black ${selectedVariantIdx === idx ? 'text-primary' : 'text-slate-600'}`}>
-                            {v.size || `${v.quantity}${v.unit}`}
+                          <span className={`text-sm font-black uppercase tracking-tight ${selectedVariantIdx === idx ? 'text-primary' : 'text-slate-800'}`}>
+                            {v.quantity}{v.unit}
                           </span>
-                          {v.price && (
-                            <span className="text-[10px] font-medium text-muted-foreground mt-0.5">
-                              {formatPrice(parseFloat(v.price))}
-                            </span>
+                          <span className="text-[10px] font-bold text-muted-foreground">
+                            {formatPrice(parseFloat(v.price || product.price))}
+                          </span>
+                          {v.stock !== undefined && Number(v.stock) < 10 && (
+                            <span className="text-[8px] font-black text-orange-500 uppercase mt-1">Low Stock</span>
                           )}
                         </button>
                       ))}
@@ -241,6 +242,7 @@ export default function ProductDetails() {
               className="space-y-6"
             >
               <div className="p-6 rounded-2xl bg-white shadow-sm border border-primary/5">
+// ... existing description section ...
                 <h3 className="font-bold mb-3">Product Description</h3>
                 <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
                   {product.description}
@@ -287,8 +289,18 @@ export default function ProductDetails() {
         <CheckoutModal 
           open={isCheckoutOpen} 
           onOpenChange={setIsCheckoutOpen}
-          productName={product.name}
-          amount={product.price}
+          productName={(() => {
+            const variants = parseVariants(product.variants);
+            return selectedVariantIdx !== null 
+              ? `${product.name} (${variants[selectedVariantIdx].quantity}${variants[selectedVariantIdx].unit})`
+              : product.name;
+          })()}
+          amount={(() => {
+            const variants = parseVariants(product.variants);
+            return selectedVariantIdx !== null && variants[selectedVariantIdx]?.price 
+              ? parseFloat(variants[selectedVariantIdx].price) 
+              : product.price;
+          })()}
           onSuccess={handlePaymentSuccess}
         />
 
