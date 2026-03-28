@@ -63,7 +63,7 @@ export default function BrandProductManager() {
         for (const v of form.variants) {
           if (!v.quantity || parseFloat(v.quantity) <= 0) throw new Error('Variant weight must be > 0');
           if (!v.price || parseFloat(v.price) <= 0) throw new Error('Variant price must be > 0');
-          if (v.stock === '' || Number(v.stock) < 0) throw new Error('Variant stock cannot be negative');
+          if (v.stock !== '' && Number(v.stock) < 0) throw new Error('Variant stock cannot be negative');
           
           const combo = `${v.quantity}${v.unit}`;
           if (seen.has(combo)) throw new Error(`Duplicate variant: ${combo}`);
@@ -79,7 +79,9 @@ export default function BrandProductManager() {
         price: parseFloat(form.price) || 0,
         commissionRate: parseFloat(form.commissionRate) || 0,
         stock: Number(form.stock) || 0,
-        variants: form.variants.length > 0 ? JSON.stringify(form.variants) : undefined
+        variants: form.variants.length > 0 
+          ? JSON.stringify(form.variants.map(v => ({ ...v, stock: v.stock === '' ? 0 : Number(v.stock) }))) 
+          : undefined
       };
 
       if (selectedFiles.length > 0) {
