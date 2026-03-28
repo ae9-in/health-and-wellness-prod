@@ -7,7 +7,9 @@ import { getBrandProducts, createBrandProduct, deleteBrandProduct } from '@/lib/
 import { Product } from '@/lib/types';
 import { formatPrice, parseVariants } from '@/lib/utils';
 import { toast } from 'sonner';
-import { Package, Plus, Trash2, Image as ImageIcon, IndianRupee, Tag, Info, ListFilter } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CATEGORIES } from '@/lib/constants';
+import { Package, Plus, Trash2, Image as ImageIcon, IndianRupee, Tag, Info, ListFilter, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function BrandProductManager() {
@@ -16,7 +18,7 @@ export default function BrandProductManager() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState({
     name: '',
-    category: '',
+    category: [] as string[],
     description: '',
     images: '',
     price: '',
@@ -24,6 +26,7 @@ export default function BrandProductManager() {
     stock: '',
     variants: [] as any[]
   });
+  const [newCategory, setNewCategory] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -70,7 +73,7 @@ export default function BrandProductManager() {
 
       const payload = {
         name: form.name,
-        category: form.category,
+        category: form.category.join(', '),
         description: form.description,
         images: form.images ? form.images.split(',').map((img: string) => img.trim()).filter(Boolean) : [],
         price: parseFloat(form.price) || 0,
@@ -89,7 +92,7 @@ export default function BrandProductManager() {
       } else {
         await createBrandProduct(token, payload as any);
       }
-      setForm({ name: '', category: '', description: '', images: '', price: '', commissionRate: '', stock: '', variants: [] });
+      setForm({ name: '', category: [], description: '', images: '', price: '', commissionRate: '', stock: '', variants: [] });
       previewUrls.forEach(url => URL.revokeObjectURL(url));
       setPreviewUrls([]);
       setSelectedFiles([]);
@@ -153,14 +156,50 @@ export default function BrandProductManager() {
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))} 
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Category</Label>
-                  <Input 
-                    className="rounded-xl h-12 border-border/60 bg-white" 
-                    placeholder="e.g. Superfoods" 
-                    value={form.category} 
-                    onChange={e => setForm(f => ({ ...f, category: e.target.value }))} 
-                  />
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Categories (Select Multiple)</Label>
+                  <div className="flex flex-wrap gap-2 p-3 min-h-[50px] bg-white border border-border/60 rounded-xl focus-within:ring-1 focus-within:ring-primary transition-all">
+                    {form.category.map((cat, idx) => (
+                      <Badge key={idx} variant="secondary" className="pl-3 pr-1 py-1 rounded-full bg-primary/10 text-primary border-primary/20 flex items-center gap-1 group">
+                        <span className="text-[11px] font-bold">{cat}</span>
+                        <button 
+                          onClick={() => setForm(f => ({ ...f, category: f.category.filter(c => c !== cat) }))}
+                          className="p-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                    <input 
+                      className="bg-transparent border-none outline-none text-xs flex-1 min-w-[120px] placeholder:text-muted-foreground" 
+                      placeholder={form.category.length === 0 ? "e.g. Wellness, Supplement" : "Add more..."}
+                      value={newCategory}
+                      onChange={e => setNewCategory(e.target.value)}
+                      onKeyDown={e => {
+                        if ((e.key === 'Enter' || e.key === ',') && newCategory.trim()) {
+                          e.preventDefault();
+                          const val = newCategory.trim().replace(/,/g, '');
+                          if (!form.category.includes(val)) {
+                            setForm(f => ({ ...f, category: [...f.category, val] }));
+                          }
+                          setNewCategory('');
+                        }
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Suggestions */}
+                  <div className="flex flex-wrap gap-1.5 px-1 overflow-x-auto pb-1">
+                    {CATEGORIES.filter(cat => !form.category.includes(cat)).map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setForm(f => ({ ...f, category: [...f.category, cat] }))}
+                        className="text-[9px] font-bold text-muted-foreground hover:text-primary px-2 py-1 bg-muted/50 hover:bg-primary/5 rounded-full transition-all border border-transparent hover:border-primary/20"
+                      >
+                        + {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
