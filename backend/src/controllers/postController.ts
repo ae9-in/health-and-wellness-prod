@@ -91,18 +91,19 @@ export async function createPost(req: AuthRequest, res: Response): Promise<void>
     let mediaType = 'none';
 
     if (files) {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
       if (files['images']) {
-        images = files['images'].map(f => `/uploads/${f.filename}`);
+        images = files['images'].map(f => `${baseUrl}/uploads/${f.filename}`);
         mediaUrls = [...mediaUrls, ...images];
         mediaType = 'image';
       }
       if (files['video']) {
-        videoUrl = `/uploads/${files['video'][0].filename}`;
+        videoUrl = `${baseUrl}/uploads/${files['video'][0].filename}`;
         mediaUrls.push(videoUrl);
         mediaType = 'video';
       }
-      if (files['audio']) audioUrl = `/uploads/${files['audio'][0].filename}`;
-      if (files['file']) fileUrl = `/uploads/${files['file'][0].filename}`;
+      if (files['audio']) audioUrl = `${baseUrl}/uploads/${files['audio'][0].filename}`;
+      if (files['file']) fileUrl = `${baseUrl}/uploads/${files['file'][0].filename}`;
     }
 
     const userId = req.userId!;

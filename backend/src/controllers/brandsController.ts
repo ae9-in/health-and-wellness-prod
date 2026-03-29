@@ -77,7 +77,7 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
         description: description.trim(),
         images: [
           ...normalizeImageUrls(imageUrls || images), // Look for both for compatibility
-          ...(files?.map(f => `/uploads/${f.filename}`) ?? [])
+          ...(files?.map(f => `${req.protocol}://${req.get('host')}/uploads/${f.filename}`) ?? [])
         ],
         price: priceValue,
         commissionRate: commissionValue,
@@ -175,7 +175,7 @@ export async function updateProduct(req: AuthRequest, res: Response): Promise<vo
 
     const files = req.files as Express.Multer.File[] | undefined;
     const existingImages = normalizeImageUrls(imageUrls || images);
-    const newFiles = files?.map(f => `/uploads/${f.filename}`) ?? [];
+    const newFiles = files?.map(f => `${req.protocol}://${req.get('host')}/uploads/${f.filename}`) ?? [];
     
     if (existingImages.length > 0 || newFiles.length > 0) {
       updateData.images = [...existingImages, ...newFiles];
