@@ -56,7 +56,7 @@ export async function getPosts(req: Request, res: Response): Promise<void> {
         id: c.id,
         postId: c.postId,
         userId: c.userId,
-        userName: c.user.fullName,
+        userName: c.user?.fullName || 'Anonymous',
         commentText: c.commentText,
         createdAt: c.createdAt.toISOString(),
       })),
@@ -72,8 +72,8 @@ export async function getPosts(req: Request, res: Response): Promise<void> {
 
     res.json(formatted);
   } catch (error) {
-    console.error('Get posts error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Get posts error detail:', error);
+    res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown' });
   }
 }
 

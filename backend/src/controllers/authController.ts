@@ -172,14 +172,14 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      const token = generateToken({ isAdmin: true, role: Role.ADMIN });
+    if (email === adminCreds.email && password === adminCreds.password) {
+      const token = jwt.sign({ isAdmin: true, role: Role.ADMIN }, JWT_SECRET, { expiresIn: '7d' });
       res.json({ 
         token, 
         user: {
           id: 'admin-id',
           fullName: 'Platform Administrator',
-          email: ADMIN_EMAIL,
+          email: adminCreds.email,
           role: Role.ADMIN,
           blocked: false,
           createdAt: new Date().toISOString()
@@ -189,8 +189,8 @@ export async function adminLogin(req: Request, res: Response): Promise<void> {
       res.status(401).json({ error: 'Invalid admin credentials' });
     }
   } catch (error) {
-    console.error('Admin login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Admin login error detail:', error);
+    res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown' });
   }
 }
 

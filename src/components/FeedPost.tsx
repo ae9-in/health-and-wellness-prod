@@ -35,10 +35,18 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
   const [isLiked, setIsLiked] = useState(user ? post.likes.includes(user.id) : false);
   const [likesCount, setLikesCount] = useState(post.likes.length);
   const [isSaved, setIsSaved] = useState(user ? (post as any).savedUsers?.includes(user.id) : false);
-  const [showComments, setShowComments] = useState(initialShowComments ?? false);
-  const [commentText, setCommentText] = useState('');
+  const [showComments, setShowComments] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Robust Base URL for media
+  const baseUrl = API_URL.includes('://') ? API_URL.replace('/api', '') : window.location.origin;
 
-  const baseUrl = API_URL.replace('/api', '');
+  const getMediaUrl = (url?: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget;
@@ -54,9 +62,6 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
       const { liked } = await togglePostLike(token, post.id);
       setIsLiked(liked);
       setLikesCount(prev => liked ? prev + 1 : prev - 1);
-      if (liked) {
-          // Trigger a small haptic-like bounce or confetti if it were more complex
-      }
     } catch { toast.error('Failed to like post'); }
   };
 
@@ -76,12 +81,14 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
 
   const handleComment = async () => {
     if (!user || !token) { toast.error('Please log in to comment'); return; }
-    if (!commentText.trim()) return;
+    if (!newComment.trim()) return;
+    setIsSubmitting(true);
     try {
-      await addComment(token, post.id, commentText);
-      setCommentText('');
+      await addComment(token, post.id, newComment);
+      setNewComment('');
       toast.success('Your insight has been shared!');
     } catch { toast.error('Failed to add comment'); }
+    finally { setIsSubmitting(false); }
   };
 
   const getRoleBadge = (role: string) => {
@@ -169,9 +176,9 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
               {post.images.slice(0, 4).map((img, idx) => (
                 <div key={idx} className="relative overflow-hidden aspect-video group/img">
                   <img 
-                    src={img.startsWith('/uploads/') ? `${baseUrl}${img}` : img} 
-                    alt="" 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105"
+                    src={getMediaUrl(img)} 
+                    alt={`Post image ${idx + 1}`}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     onError={handleImageError}
                   />
                   {idx === 3 && post.images.length > 4 && (
@@ -182,14 +189,17 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
                 </div>
               ))}
             </div>
-          ) : (!post.videoUrl) && (
+          ) : null}
+
+          {/* Fallback rendering - ONLY if no images AND no video AND no mediaUrls */}
+          {(!post.images || post.images.length === 0) && !post.videoUrl && (!post.mediaUrls || post.mediaUrls.length === 0) && (
             <div className="relative overflow-hidden aspect-[21/9]">
               <img 
-                src={getFallbackImage(post.category)} 
-                alt={`${post.category} fallback`} 
-                className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" 
+                src={getFallbackImage(post.category || '')} 
+                alt={post.category}
+                className="w-full h-full object-cover opacity-90"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             </div>
           )}
 
@@ -200,7 +210,7 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
                 playsInline
                 className="w-full h-full object-cover opacity-90 group-hover/vid:opacity-100 transition-opacity"
               >
-                <source src={post.videoUrl.startsWith('/uploads/') ? `${baseUrl}${post.videoUrl}` : post.videoUrl} />
+                <source src={getMediaUrl(post.videoUrl)} />
                 Your browser does not support the video tag.
               </video>
             </div>

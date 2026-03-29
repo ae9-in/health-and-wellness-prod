@@ -48,8 +48,8 @@ export async function getProducts(req: Request, res: Response): Promise<void> {
 
     res.json({ products });
   } catch (error) {
-    console.error('Get products error:', error);
-    res.status(500).json({ error: 'Unable to fetch products' });
+    console.error('Get products error detail:', error);
+    res.status(500).json({ error: 'Unable to fetch products', details: error instanceof Error ? error.message : 'Unknown' });
   }
 }
 
@@ -70,8 +70,8 @@ export async function getProductById(req: Request, res: Response): Promise<void>
 
     res.json({ product });
   } catch (error) {
-    console.error('Get product by id error:', error);
-    res.status(500).json({ error: 'Unable to fetch product' });
+    console.error('Get product by id error detail:', error);
+    res.status(500).json({ error: 'Unable to fetch product', details: error instanceof Error ? error.message : 'Unknown' });
   }
 }
 

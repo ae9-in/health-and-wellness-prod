@@ -52,7 +52,7 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
     req.userId = liveUser.id;
     req.userRole = liveUser.role;
     const adminCreds = getAdminCredentials();
-    req.isAdmin = !!(adminCreds && liveUser.email === adminCreds.email);
+    req.isAdmin = liveUser.role === Role.ADMIN || !!(adminCreds && liveUser.email === adminCreds.email);
     next();
   } catch {
     res.status(401).json({ error: 'Invalid or expired token' });
