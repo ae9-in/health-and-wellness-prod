@@ -26,12 +26,13 @@ export function parseVariants(variants: any): any[] {
   }
   return [];
 }
+import { API_BASE } from './api';
+
 export function resolveImageUrl(url: string | undefined): string {
   if (!url) return ''; // No image — let UI handle its own empty state
   if (url.startsWith('http')) return url;
   if (url.startsWith('data:')) return url;
   
-  const API_URL = import.meta.env.VITE_API_URL || 'https://health-and-wellness-prod.onrender.com/api';
-  const baseUrl = API_URL.replace('/api', '');
+  const baseUrl = API_BASE.replace('/api', '');
   return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 }

@@ -33,3 +33,5 @@ lint_results*
 tsc_results*
 *.txt
 *.log
+
+.env
