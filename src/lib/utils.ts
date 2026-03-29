@@ -27,7 +27,7 @@ export function parseVariants(variants: any): any[] {
   return [];
 }
 export function resolveImageUrl(url: string | undefined): string {
-  if (!url) return 'https://images.unsplash.com/photo-1540344484110-2c93d80db616?auto=format&fit=crop&w=800&q=80'; // Neutral wellness herbs
+  if (!url) return ''; // No image — let UI handle its own empty state
   if (url.startsWith('http')) return url;
   if (url.startsWith('data:')) return url;
   

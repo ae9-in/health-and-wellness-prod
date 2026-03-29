@@ -16,11 +16,17 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Card className="flex h-full flex-col overflow-hidden rounded-[2rem] border border-slate-100/80 bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl group">
       <Link to={`/products/${product.id}`} className="block relative overflow-hidden aspect-[4/3]">
-        <img
-          src={resolveImageUrl(product.images?.[0] || (product as any).image)}
-          alt={product.name}
-          className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105 bg-slate-50/30"
-        />
+        {resolveImageUrl(product.images?.[0] || (product as any).image) ? (
+          <img
+            src={resolveImageUrl(product.images?.[0] || (product as any).image)}
+            alt={product.name}
+            className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105 bg-slate-50/30"
+            onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.querySelector('.no-img')?.classList.remove('hidden'); }}
+          />
+        ) : null}
+        <div className={`no-img ${resolveImageUrl(product.images?.[0] || (product as any).image) ? 'hidden' : ''} w-full h-full flex items-center justify-center bg-slate-50 text-slate-300 text-sm font-medium`}>
+          No image
+        </div>
         {product.isPopular && (
           <Badge className="absolute top-3 left-3 bg-amber-500 text-white border-none shadow-lg">
             <Star className="w-3 h-3 mr-1 fill-white" /> Popular
