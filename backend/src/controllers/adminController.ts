@@ -620,3 +620,48 @@ export async function updatePayoutStatus(req: Request, res: Response): Promise<v
     res.status(500).json({ error: 'Unable to update payout status' });
   }
 }
+
+// Get all global settings
+export async function getGlobalSettings(req: Request, res: Response): Promise<void> {
+  try {
+    const settings = await prisma.globalSetting.findMany();
+    res.json(settings);
+  } catch (error) {
+    console.error('Get global settings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Update a global setting
+export async function updateGlobalSetting(req: Request, res: Response): Promise<void> {
+  try {
+    const { key } = req.params;
+    const { value } = req.body;
+
+    const setting = await prisma.globalSetting.upsert({
+      where: { key },
+      update: { value: String(value) },
+      create: { key, value: String(value) },
+    });
+
+    res.json(setting);
+  } catch (error) {
+    console.error('Update global setting error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Get public settings (no auth required)
+export async function getPublicSettings(_req: Request, res: Response): Promise<void> {
+  try {
+    const settings = await prisma.globalSetting.findMany();
+    const settingsMap = settings.reduce((acc: any, s: any) => {
+      acc[s.key] = s.value;
+      return acc;
+    }, {});
+    res.json(settingsMap);
+  } catch (error) {
+    console.error('Get public settings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}

@@ -343,3 +343,16 @@ export async function getAdminCommissionRequests(token: string) {
 export async function updateAdminCommissionRequest(token: string, requestId: string, payload: { status: string; requestedCommission?: number }) {
   return request<{ message: string }>(`/admin/affiliates/commission-requests/${requestId}`, { method: 'PATCH', body: JSON.stringify(payload) }, token);
 }
+
+// Global Settings API
+export async function getGlobalSettings(token: string) {
+  return request<Array<{ key: string, value: string }>>('/admin/settings', { method: 'GET' }, token);
+}
+
+export async function updateGlobalSetting(token: string, key: string, value: string | number) {
+  return request<{ key: string, value: string }>(`/admin/settings/${key}`, { method: 'PATCH', body: JSON.stringify({ value }) }, token);
+}
+
+export async function getPublicSettings() {
+  return request<Record<string, string>>('/settings', { method: 'GET' });
+}

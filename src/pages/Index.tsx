@@ -6,18 +6,9 @@ import { motion } from 'framer-motion';
 import { Heart, Users, Calendar, Shield, ArrowRight, Handshake, Leaf, MessageSquare, Share2, Bookmark, ShoppingBag } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { getPosts, getSessions, getProducts } from '@/lib/api';
+import { getPosts, getSessions, getProducts, getPublicSettings } from '@/lib/api';
 
-const HERO_STATS = [
-  { label: 'Nutrition', value: '28K' },
-  { label: 'Fitness', value: '18K' },
-  { label: 'Mental wellness', value: '14K' },
-  { label: 'Yoga', value: '11K' },
-  { label: 'Herbal products', value: '9K' },
-  { label: 'Supplements', value: '7K' },
-  { label: 'Ayurveda', value: '6K' },
-  { label: 'Weight loss', value: '5K' },
-];
+
 
 const GRID_FEATURES = [
   {
@@ -143,32 +134,7 @@ const FEATURE_CARDS = [
   },
 ];
 
-const FALLBACK_DISCUSSIONS = [
-  {
-    id: 'default-discussion-1',
-    title: 'How do you structure a mindful morning routine?',
-    description: 'Share your journaling, breathing, or movement rituals so everyone can start the day grounded.',
-    category: 'Mental wellness',
-    authorName: 'Sasha Patel',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'default-discussion-2',
-    title: 'Best herbs to support digestion after a heavy meal?',
-    description: 'Looking for gentle teas and cooking hacks that keep digestion calm without compromising flavor.',
-    category: 'Nutrition',
-    authorName: 'Chef Mina',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'default-discussion-3',
-    title: 'Guided movement breaks for remote teams?',
-    description: 'Share quick stretches, chair yoga, or breath sequences that help reduce stiffness between meetings.',
-    category: 'Yoga',
-    authorName: 'Studio Kinetic',
-    createdAt: new Date().toISOString(),
-  },
-];
+
 
 const features = [
   { icon: Heart, title: 'Health Discussions', desc: 'Share experiences and get support from a caring community.' },
@@ -191,8 +157,8 @@ export default function Index() {
     queryKey: ['products', 'landing-highlight'],
     queryFn: () => getProducts({ popular: true })
   });
+  const { data: publicSettings = {} } = useQuery({ queryKey: ['publicSettings'], queryFn: getPublicSettings });
   const previewPosts = posts.slice(0, 3);
-  const fallbackPosts = FALLBACK_DISCUSSIONS.slice(0, 3);
   const previewSessions = sessions.slice(0, 2);
   const feedPostTypes = ['Articles', 'Short Tips', 'Videos', 'Product Reviews', 'Success Stories'];
   const feedHighlights = [
@@ -310,9 +276,9 @@ const productFilters = ['Category', 'Price', 'Brand', 'Popular products'];
                 animate={{ y: [0, -12, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <p className="text-xs uppercase tracking-[0.2em] text-[#4F7153]">Today's Vitality</p>
-                <p className="font-display text-2xl font-semibold text-[#1E1E1E]">92 / 100</p>
-                <p className="text-sm text-[#8A8478]">↑ Feeling great!</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-[#4F7153]">Community Members</p>
+                <p className="font-display text-2xl font-semibold text-[#1E1E1E]">{publicSettings['hero_stat_nutrition'] || '0'}</p>
+                <p className="text-sm text-[#8A8478]">Nutrition enthusiasts</p>
               </motion.div>
               <motion.div
                 className="floating-card top-6 right-6"
@@ -320,9 +286,9 @@ const productFilters = ['Category', 'Price', 'Brand', 'Popular products'];
                 animate={{ y: [0, 10, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <p className="text-xs uppercase tracking-[0.2em] text-[#4F7153]">Mindful Minutes</p>
-                <p className="font-display text-2xl font-semibold text-[#1E1E1E]">24m</p>
-                <p className="text-sm text-[#8A8478]">Morning session ✓</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-[#4F7153]">Fitness Members</p>
+                <p className="font-display text-2xl font-semibold text-[#1E1E1E]">{publicSettings['hero_stat_fitness'] || '0'}</p>
+                <p className="text-sm text-[#8A8478]">Active & growing</p>
               </motion.div>
             </div>
           </div>
@@ -576,7 +542,9 @@ const productFilters = ['Category', 'Price', 'Brand', 'Popular products'];
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {(previewPosts.length > 0 ? previewPosts : fallbackPosts).map((post, i) => (
+            {previewPosts.length === 0 ? (
+              <div className="col-span-3 text-center py-16 text-muted-foreground italic">No discussions yet. Be the first to post!</div>
+            ) : previewPosts.map((post, i) => (
               <motion.div
                 key={post.id}
                 initial={{ opacity: 0, y: 20 }}

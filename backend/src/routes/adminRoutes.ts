@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createUser, getAllUsers, toggleBlockUser, deleteUser, getDashboardStats, getAllPayments, updatePost, deletePost, createAdminPost, togglePostSponsored, getAllComments, deleteAdminComment, listAffiliateCoupons, updateAffiliateCoupon, regenerateAffiliateCouponHandler, listCommissionRequests, updateCommissionRequestStatus, listPendingCommissions, approveCommission, listPayoutBatches, createPayoutBatch, updatePayoutStatus } from '../controllers/adminController';
+import { createUser, getAllUsers, toggleBlockUser, deleteUser, getDashboardStats, getAllPayments, updatePost, deletePost, createAdminPost, togglePostSponsored, getAllComments, deleteAdminComment, listAffiliateCoupons, updateAffiliateCoupon, regenerateAffiliateCouponHandler, listCommissionRequests, updateCommissionRequestStatus, listPendingCommissions, approveCommission, listPayoutBatches, createPayoutBatch, updatePayoutStatus, getGlobalSettings, updateGlobalSetting } from '../controllers/adminController';
 import { createSession, updateSession, deleteSession } from '../controllers/sessionController';
 import { getPartnerships, updatePartnershipStatus, updatePartnership, deletePartnership } from '../controllers/partnershipController';
 import { listAffiliateApplications, reviewAffiliate, listBrandApplications, reviewBrand, listAdminProducts, reviewProduct, deleteAdminProduct, deleteBrand, deleteAffiliate } from '../controllers/approvalController';
@@ -62,5 +62,8 @@ router.patch('/commissions/:commissionId/status', approveCommission);
 router.get('/payouts/batches', listPayoutBatches);
 router.post('/payouts/batches', createPayoutBatch);
 router.patch('/payouts/batches/:batchId/status', updatePayoutStatus);
+
+router.get('/settings', getGlobalSettings);
+router.patch('/settings/:key', updateGlobalSetting);
 
 export default router;

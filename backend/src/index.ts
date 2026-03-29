@@ -15,6 +15,7 @@ import brandRoutes from './routes/brandRoutes';
 import adminRoutes from './routes/adminRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import productRoutes from './routes/productRoutes';
+import settingRoutes from './routes/settingRoutes';
 
 dotenv.config();
 
@@ -76,6 +77,7 @@ app.use('/api/affiliates', affiliateRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/settings', settingRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Global error handler

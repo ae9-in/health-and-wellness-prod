@@ -213,24 +213,6 @@ export default function CommunityFeed() {
                   ))}
                 </div>
               </div>
-
-              <div className="bg-white/90 border border-slate-200 shadow-lg shadow-slate-900/10 rounded-[2rem] p-6 space-y-4">
-                <h4 className="font-black text-xs uppercase tracking-[0.4em] text-[#1A2E05]">Trending Experts</h4>
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="flex items-center gap-3 group cursor-pointer">
-                      <div className="h-10 w-10 rounded-xl bg-white shadow-sm overflow-hidden border border-slate-100">
-                        <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-black text-sm text-[#1A2E05] line-clamp-1 group-hover:text-primary transition-colors">Dr. Sarah Johnson</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Wellness Expert</p>
-                      </div>
-                      <Plus className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  ))}
-                </div>
-              </div>
             </aside>
           </div>
         </div>

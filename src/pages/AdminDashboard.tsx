@@ -30,7 +30,9 @@ import {
   getAdminComments,
   deleteAdminComment,
   getAdminCommissionRequests,
-  updateAdminCommissionRequest
+  updateAdminCommissionRequest,
+  getGlobalSettings,
+  updateGlobalSetting
 } from '@/lib/api';
 import NotificationPanel from '@/components/NotificationPanel';
 import { Button } from '@/components/ui/button';
@@ -42,7 +44,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   Leaf, ShieldCheck, Users, MessageSquare, Calendar, Handshake, Plus, Trash2, 
   Ban, Check, X, Edit, UserCheck, UserX, Package, TrendingUp, DollarSign, 
-  Globe, LayoutDashboard, Search, Filter, ArrowUpRight, ShieldAlert, BadgeCheck
+  Globe, LayoutDashboard, Search, Filter, ArrowUpRight, ShieldAlert, BadgeCheck, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPrice } from '@/lib/utils';
@@ -160,6 +162,7 @@ export default function AdminDashboard() {
   const { data: comments = [] } = useQuery({ queryKey: ['adminComments'], queryFn: () => getAdminComments(token!), enabled: !!token });
   const { data: commissionRequests = [] } = useQuery({ queryKey: ['commission-requests'], queryFn: () => getAdminCommissionRequests(token!), enabled: !!token });
   const { data: adminPartnerships = [] } = useQuery({ queryKey: ['adminPartnerships'], queryFn: () => getAdminPartnerships(token!), enabled: !!token });
+  const { data: globalSettings = [] } = useQuery({ queryKey: ['globalSettings'], queryFn: () => getGlobalSettings(token!), enabled: !!token });
   const [growthData, setGrowthData] = useState<GrowthPoint[]>(() => createInitialGrowth());
   const [mindfulMinutes, setMindfulMinutes] = useState(24);
   const [mindfulNote, setMindfulNote] = useState('Morning session ✓');
@@ -177,9 +180,9 @@ export default function AdminDashboard() {
         const last = prev[prev.length - 1] ?? baseline;
         const next = {
           label: new Date().toLocaleTimeString([], { minute: '2-digit', second: '2-digit' }),
-          users: Math.max(0, last.users + (delta.users ?? Math.round(Math.random() * 3))),
-          posts: Math.max(0, last.posts + (delta.posts ?? Math.round(Math.random() * 2))),
-          revenue: Math.max(0, last.revenue + (delta.revenue ?? Math.round(Math.random() * 50))),
+          users: last.users + (delta.users ?? 0),
+          posts: last.posts + (delta.posts ?? 0),
+          revenue: last.revenue + (delta.revenue ?? 0),
         };
         const window = prev.length >= 8 ? prev.slice(prev.length - 7) : prev;
         return [...window, next];
@@ -204,17 +207,12 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (stats) {
-      setMindfulMinutes(stats?.mindfulMinutes ?? 24);
-      setMindfulNote(stats?.mindfulNote ?? 'Morning session ✓');
-      setVitalityScore(stats?.vitalityScore ?? 92);
-      setVitalityComment(stats?.vitalityComment ?? 'Feeling great!');
+      setMindfulMinutes(stats?.mindfulMinutes ?? 0);
+      setMindfulNote(stats?.mindfulNote ?? 'System ready');
+      setVitalityScore(stats?.vitalityScore ?? 0);
+      setVitalityComment(stats?.vitalityComment ?? 'Awaiting data');
     }
   }, [stats]);
-
-  useEffect(() => {
-    const interval = setInterval(() => addGrowthPoint(), 6000);
-    return () => clearInterval(interval);
-  }, [addGrowthPoint]);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -352,6 +350,7 @@ export default function AdminDashboard() {
               { id: 'commission-requests', label: 'Commission Queue', icon: TrendingUp },
               { id: 'content', label: 'Content Lab', icon: MessageSquare },
               { id: 'sessions', label: 'Wellness Events', icon: Calendar },
+              { id: 'settings', label: 'Platform Settings', icon: Globe },
             ].map(item => (
               <button
                 key={item.id}
@@ -394,7 +393,8 @@ export default function AdminDashboard() {
                 {activeTab === 'overview' ? 'Command Center' : 
                  activeTab === 'users' ? 'Member Management' : 
                  activeTab === 'partners' ? 'Partner Ecosystem' : 
-                 activeTab === 'marketplace' ? 'Marketplace Control' : 
+                 activeTab === 'marketplace' ? 'Marketplace Control' :
+                 activeTab === 'settings' ? 'Platform Settings' :
                  'Moderation Suite'}
               </h1>
               <p className="text-muted-foreground font-medium mt-1">Platform health: <span className="text-emerald-600 font-bold">Stable & Optimal</span></p>
@@ -1262,8 +1262,110 @@ export default function AdminDashboard() {
               </div>
             )}
           </AnimatePresence>
+
+          {/* Platform Settings Tab */}
+          {activeTab === 'settings' && (
+            <SettingsPanel token={token!} globalSettings={globalSettings} onSaved={() => queryClient.invalidateQueries({ queryKey: ['globalSettings'] })} />
+          )}
         </main>
       </div>
+    </div>
+  );
+}
+
+function SettingsPanel({ token, globalSettings, onSaved }: { token: string; globalSettings: Array<{ key: string; value: string }>; onSaved: () => void }) {
+  const DEFAULT_KEYS = [
+    { key: 'hero_stat_nutrition', label: 'Nutrition Members' },
+    { key: 'hero_stat_fitness', label: 'Fitness Members' },
+    { key: 'hero_stat_mental_wellness', label: 'Mental Wellness Members' },
+    { key: 'hero_stat_yoga', label: 'Yoga Members' },
+    { key: 'hero_stat_herbal', label: 'Herbal Products Members' },
+    { key: 'hero_stat_supplements', label: 'Supplements Members' },
+    { key: 'hero_stat_ayurveda', label: 'Ayurveda Members' },
+    { key: 'hero_stat_weight_loss', label: 'Weight Loss Members' },
+  ];
+
+  const toMap = (arr: Array<{ key: string; value: string }>) =>
+    arr.reduce((acc: Record<string, string>, s) => { acc[s.key] = s.value; return acc; }, {});
+
+  const [values, setValues] = useState<Record<string, string>>(() => toMap(globalSettings));
+  const [saving, setSaving] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+
+  useEffect(() => {
+    setValues(toMap(globalSettings));
+  }, [globalSettings]);
+
+  const handleSave = async (key: string) => {
+    setSaving(key);
+    try {
+      await updateGlobalSetting(token, key, values[key] || '0');
+      setSaved(key);
+      onSaved();
+      setTimeout(() => setSaved(null), 2000);
+    } catch (e) {
+      toast.error('Failed to save setting');
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="bg-white rounded-[2.5rem] border border-border/50 shadow-sm p-8">
+        <p className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground mb-2 font-black">Hero Banner</p>
+        <h3 className="font-display text-2xl font-bold text-[#1A2E05] mb-2">Community Member Counts</h3>
+        <p className="text-sm text-muted-foreground mb-8">These numbers appear on the homepage hero section. Set them to 0 until you have real data.</p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {DEFAULT_KEYS.map(({ key, label }) => (
+            <div key={key} className="space-y-2">
+              <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{label}</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={values[key] ?? '0'}
+                  onChange={e => setValues(v => ({ ...v, [key]: e.target.value }))}
+                  className="rounded-xl h-10 text-lg font-black"
+                  placeholder="0"
+                />
+                <Button
+                  size="sm"
+                  className="h-10 rounded-xl px-3"
+                  onClick={() => handleSave(key)}
+                  disabled={saving === key}
+                >
+                  {saved === key ? <Check className="h-4 w-4 text-emerald-400" /> : saving === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {globalSettings.filter(s => !DEFAULT_KEYS.map(k => k.key).includes(s.key)).length > 0 && (
+        <div className="bg-white rounded-[2.5rem] border border-border/50 shadow-sm p-8">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground mb-2 font-black">Other Settings</p>
+          <h3 className="font-display text-2xl font-bold text-[#1A2E05] mb-6">Custom Platform Settings</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {globalSettings.filter(s => !DEFAULT_KEYS.map(k => k.key).includes(s.key)).map(s => (
+              <div key={s.key} className="space-y-2">
+                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">{s.key}</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={values[s.key] ?? ''}
+                    onChange={e => setValues(v => ({ ...v, [s.key]: e.target.value }))}
+                    className="rounded-xl h-10"
+                  />
+                  <Button size="sm" className="h-10 rounded-xl px-3" onClick={() => handleSave(s.key)} disabled={saving === s.key}>
+                    {saved === s.key ? <Check className="h-4 w-4 text-emerald-400" /> : saving === s.key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
