@@ -33,6 +33,7 @@ import FeedPost from '@/components/FeedPost';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CreatePostModal from '@/components/CreatePostModal';
+import CompactCreatePost from '@/components/CompactCreatePost';
 
 export default function CommunityFeed() {
   const { user, token } = useAuth();
@@ -116,24 +117,14 @@ export default function CommunityFeed() {
           <div className="flex flex-col-reverse gap-8 lg:flex-row lg:items-start lg:justify-center">
             <div className="flex-1 flex justify-center">
               <div className="w-full max-w-[700px] space-y-8">
-                {/* Create Post Action Card */}
+                {/* Create Post Action Card - Compact Redesign */}
                 {user && user.role !== 'USER' && (
                   <motion.div 
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white/95 backdrop-blur rounded-[2.25rem] border border-slate-100/70 shadow-lg shadow-slate-900/10 p-6 flex flex-col gap-6"
+                    className="w-full"
                   >
-                    <div className="h-14 w-14 rounded-3xl bg-primary/10 flex items-center justify-center font-black text-2xl text-primary border-4 border-white shadow-xl shrink-0">
-                      {user.fullName.charAt(0)}
-                    </div>
-                    <CreatePostModal 
-                      isOpen={isNewPostDialogOpen} 
-                      onOpenChange={setIsNewPostDialogOpen}
-                      onSuccess={loadPosts}
-                    />
-                    <button onClick={() => setIsNewPostDialogOpen(true)} className="h-14 w-14 flex items-center justify-center bg-[#1A2E05] text-white rounded-[1.5rem] hover:bg-primary hover:scale-105 transition-all shrink-0 shadow-lg shadow-black/10">
-                      <Zap className="h-6 w-6 fill-white" />
-                    </button>
+                    <CompactCreatePost onSuccess={loadPosts} />
                   </motion.div>
                 )}
 
@@ -249,7 +240,7 @@ export default function CommunityFeed() {
         {selectedPost && (
           <motion.div
             key="post-modal"
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-6 bg-black/70 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

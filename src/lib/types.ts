@@ -55,9 +55,9 @@ export interface User {
 
 export interface Post {
   id: string;
-  title: string;
+  title?: string;
   description: string;
-  category: string;
+  category?: string;
   authorId: string;
   authorName: string;
   authorRole: string;
@@ -78,11 +78,14 @@ export interface Post {
   savedUsers: string[]; // List of user IDs who saved
   isLiked?: boolean;
   isSaved?: boolean;
-  postType: 'ARTICLE' | 'VIDEO' | 'AUDIO' | 'IMAGE' | 'SHORT_TIP' | 'SUCCESS_STORY' | 'PRODUCT_REVIEW';
+  postType: string; // Dynamic
   images: string[];
   videoUrl?: string;
   audioUrl?: string;
   fileUrl?: string;
+  userType?: string;
+  mediaType?: string;
+  mediaUrls?: string[];
   sponsored?: boolean;
 }
 

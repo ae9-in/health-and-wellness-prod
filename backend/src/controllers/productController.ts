@@ -40,7 +40,7 @@ export async function getProducts(req: Request, res: Response): Promise<void> {
       include: {
         brand: true,
       },
-      take: limit ? parseInt(String(limit)) : undefined,
+      take: limit ? (isNaN(parseInt(String(limit))) ? undefined : parseInt(String(limit))) : undefined,
       orderBy: {
         createdAt: 'desc',
       },

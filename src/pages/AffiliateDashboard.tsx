@@ -26,7 +26,7 @@ import {
   Globe,
   PlusCircle
 } from 'lucide-react';
-import CreatePostModal from '@/components/CreatePostModal';
+import CompactCreatePost from '@/components/CompactCreatePost';
 import FeedPost from '@/components/FeedPost';
 import { getAuthorPosts } from '@/lib/api';
 import {
@@ -54,6 +54,7 @@ import type { Product } from '@/lib/types';
 
 export default function AffiliateDashboard() {
   const { user, token } = useAuth();
+  const queryClient = useQueryClient();
   const [commission, setCommission] = useState('15');
   const [sales, setSales] = useState('50');
   const [avgPrice, setAvgPrice] = useState('1000');
@@ -67,7 +68,6 @@ export default function AffiliateDashboard() {
   const [requestedCommission, setRequestedCommission] = useState('20');
   const [requestReason, setRequestReason] = useState('');
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
-  const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
 
   const calculateTieredCommission = (salesVal: number) => {
     if (salesVal <= 10) return 10;
@@ -115,7 +115,7 @@ export default function AffiliateDashboard() {
         search: filters.search,
         category: filters.category !== 'all' ? filters.category : '',
         limit: 12
-      }).then(data => {
+      }).then((data: any) => {
         if (isMounted) setProducts(data?.products || data || []);
       });
     };
@@ -538,19 +538,14 @@ export default function AffiliateDashboard() {
               </div>
             </div>
             
-            {/* My Content Section */}
-            <div className="space-y-8 bg-white rounded-[3rem] p-8 md:p-12 border border-primary/5 shadow-sm">
-              <div className="flex items-center justify-between border-b border-primary/5 pb-8">
+            <div id="community-posts" className="space-y-8 bg-white rounded-[3rem] p-8 md:p-12 border border-primary/5 shadow-sm">
+              <div className="flex flex-col gap-6 border-b border-primary/5 pb-8">
                 <div>
                   <h2 className="font-display text-3xl font-bold text-[#1A2E05] tracking-tight">My Community Posts</h2>
                   <p className="text-muted-foreground text-lg mt-1 font-medium">Sharing your wellness journey with the community.</p>
                 </div>
-                <Button 
-                  onClick={() => setIsCreatePostModalOpen(true)}
-                  className="rounded-2xl h-12 px-6 font-bold shadow-lg shadow-primary/20 bg-[#1A2E05] hover:bg-[#25300c]"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" /> Create New Post
-                </Button>
+                
+                <CompactCreatePost onSuccess={refetchPosts} />
               </div>
 
               {authorPosts.length > 0 ? (
@@ -566,7 +561,7 @@ export default function AffiliateDashboard() {
                   <Globe className="h-12 w-12 text-primary/30 mx-auto mb-4" />
                   <h3 className="text-xl font-bold mb-2">Build your authority</h3>
                   <p className="text-muted-foreground mb-10 max-w-sm mx-auto">Create wellness articles or success stories to inspire others and boost your affiliate profile.</p>
-                  <Button onClick={() => setIsCreatePostModalOpen(true)} variant="secondary" className="rounded-2xl font-bold px-10 h-14">
+                  <Button onClick={() => document.getElementById('community-posts')?.scrollIntoView({ behavior: 'smooth' })} variant="secondary" className="rounded-2xl font-bold px-10 h-14">
                     Create Your First Post
                   </Button>
                 </div>
@@ -581,7 +576,7 @@ export default function AffiliateDashboard() {
               <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Quick Actions</p>
               <div className="space-y-3">
                 <Button 
-                  onClick={() => setIsCreatePostModalOpen(true)}
+                  onClick={() => document.getElementById('community-posts')?.scrollIntoView({ behavior: 'smooth' })}
                   className="w-full justify-start gap-2 rounded-xl text-sm font-bold bg-[#1A2E05] hover:bg-[#2A4E05]"
                 >
                   <PlusCircle className="h-4 w-4" /> Create New Post
@@ -668,11 +663,6 @@ export default function AffiliateDashboard() {
           </aside>
         </div>
       </main>
-      <CreatePostModal 
-        isOpen={isCreatePostModalOpen}
-        onOpenChange={setIsCreatePostModalOpen}
-        onSuccess={refetchPosts}
-      />
       <Footer />
 
 

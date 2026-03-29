@@ -12,14 +12,13 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CreatePostModal from '@/components/CreatePostModal';
+import CompactCreatePost from '@/components/CompactCreatePost';
 import { getAuthorPosts } from '@/lib/api';
 import FeedPost from '@/components/FeedPost';
 
 
 export default function BrandDashboard() {
   const { user, token } = useAuth();
-  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const { data: authorPosts = [], refetch: refetchPosts } = useQuery({
     queryKey: ['authorPosts', user?.id],
     queryFn: () => getAuthorPosts(user!.id),
@@ -236,17 +235,13 @@ export default function BrandDashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-8"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-6">
                     <div>
                       <h3 className="text-2xl font-bold font-display">Your Community Presence</h3>
                       <p className="text-sm text-muted-foreground">Manage your articles, success stories, and wellness tips.</p>
                     </div>
-                    <Button 
-                      onClick={() => setIsPostModalOpen(true)}
-                      className="rounded-2xl h-12 px-6 font-bold shadow-lg shadow-primary/20 bg-[#1A2E05] hover:bg-[#25300c]"
-                    >
-                      <Plus className="h-4 w-4 mr-2" /> Create New Post
-                    </Button>
+                    
+                    <CompactCreatePost onSuccess={refetchPosts} />
                   </div>
                   
                   {authorPosts.length > 0 ? (
@@ -262,7 +257,7 @@ export default function BrandDashboard() {
                       <Globe className="h-12 w-12 text-primary/30 mx-auto mb-4" />
                       <h4 className="text-xl font-bold mb-2">No posts yet</h4>
                       <p className="text-muted-foreground mb-8">Start building your brand authority in the community.</p>
-                      <Button onClick={() => setIsPostModalOpen(true)} variant="secondary" className="rounded-2xl font-bold">
+                      <Button onClick={() => setActiveTab('community')} variant="secondary" className="rounded-2xl font-bold">
                         Create Your First Post
                       </Button>
                     </div>
@@ -270,11 +265,6 @@ export default function BrandDashboard() {
                 </motion.div>
               </TabsContent>
             </Tabs>
-            <CreatePostModal 
-              isOpen={isPostModalOpen}
-              onOpenChange={setIsPostModalOpen}
-              onSuccess={refetchPosts}
-            />
           </div>
 
           <aside className="space-y-8 lg:sticky lg:top-8">
@@ -284,10 +274,7 @@ export default function BrandDashboard() {
               <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Quick Actions</p>
               <div className="space-y-3">
                 <Button 
-                  onClick={() => {
-                    setActiveTab('community');
-                    setIsPostModalOpen(true);
-                  }}
+                  onClick={() => setActiveTab('community')}
                   className="w-full justify-start gap-2 rounded-xl text-sm font-bold bg-primary/10 text-primary hover:bg-primary/20"
                 >
                   <Globe className="h-4 w-4" /> Create New Post

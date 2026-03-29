@@ -21,7 +21,7 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterC
     // Images
     'image/jpeg', 'image/png', 'image/webp', 'image/gif',
     // Video
-    'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo',
+    'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 'video/webm',
     // Audio
     'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4',
     // Files

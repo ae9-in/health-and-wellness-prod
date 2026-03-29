@@ -194,15 +194,15 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
           )}
 
           {post.videoUrl && !post.images?.length && (
-            <div className="relative aspect-video bg-slate-900 flex items-center justify-center group/vid cursor-pointer">
-              <video className="w-full h-full object-cover opacity-90 group-hover/vid:opacity-100 transition-opacity">
+            <div className="relative aspect-video bg-slate-900 flex items-center justify-center group/vid cursor-pointer" onClick={(e) => e.stopPropagation()}>
+              <video 
+                controls
+                playsInline
+                className="w-full h-full object-cover opacity-90 group-hover/vid:opacity-100 transition-opacity"
+              >
                 <source src={post.videoUrl.startsWith('/uploads/') ? `${baseUrl}${post.videoUrl}` : post.videoUrl} />
+                Your browser does not support the video tag.
               </video>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-20 w-20 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20 group-hover/vid:scale-110 group-hover/vid:bg-primary transition-all duration-500 shadow-2xl">
-                  <Play className="h-10 w-10 text-white fill-white ml-1.5" />
-                </div>
-              </div>
             </div>
           )}
 

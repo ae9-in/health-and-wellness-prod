@@ -47,8 +47,8 @@ export async function getPosts(req: Request, res: Response): Promise<void> {
       description: p.description,
       category: p.category,
       authorId: p.authorId,
-      authorName: p.author.fullName,
-      authorRole: p.author.role,
+      authorName: p.author?.fullName || 'Community Member',
+      authorRole: p.author?.role || 'USER',
       postType: p.postType,
       likes: p.likes.map((l: any) => l.userId),
       savedUsers: p.savedBy.map((s: any) => s.userId),
@@ -64,6 +64,9 @@ export async function getPosts(req: Request, res: Response): Promise<void> {
       videoUrl: p.videoUrl,
       audioUrl: p.audioUrl,
       fileUrl: p.fileUrl,
+      userType: p.userType,
+      mediaType: p.mediaType,
+      mediaUrls: p.mediaUrls || [],
       createdAt: p.createdAt.toISOString(),
     }));
 
@@ -77,32 +80,56 @@ export async function getPosts(req: Request, res: Response): Promise<void> {
 // Create a new post
 export async function createPost(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const { title, description, category, postType = 'ARTICLE' } = req.body;
+    const { title, description, category = 'General', postType = 'ARTICLE', userType = 'user' } = req.body;
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     let images: string[] = [];
     let videoUrl = req.body.videoUrl;
     let audioUrl = req.body.audioUrl;
     let fileUrl = req.body.fileUrl;
+    let mediaUrls: string[] = [];
+    let mediaType = 'none';
 
     if (files) {
       if (files['images']) {
         images = files['images'].map(f => `/uploads/${f.filename}`);
+        mediaUrls = [...mediaUrls, ...images];
+        mediaType = 'image';
       }
-      if (files['video']) videoUrl = `/uploads/${files['video'][0].filename}`;
+      if (files['video']) {
+        videoUrl = `/uploads/${files['video'][0].filename}`;
+        mediaUrls.push(videoUrl);
+        mediaType = 'video';
+      }
       if (files['audio']) audioUrl = `/uploads/${files['audio'][0].filename}`;
       if (files['file']) fileUrl = `/uploads/${files['file'][0].filename}`;
     }
 
     const userId = req.userId!;
 
-    if (!title || !description || !category) {
-      res.status(400).json({ error: 'Title, description, and category are required' });
+    if (!description) {
+      res.status(400).json({ error: 'Description (content) is required' });
       return;
     }
 
+    // Default title if not provided
+    const finalTitle = title || description.slice(0, 50) + (description.length > 50 ? '...' : '');
+
     const post = await prisma.post.create({
-      data: { title, description, category, postType, images, videoUrl, audioUrl, fileUrl, authorId: userId },
+      data: { 
+        title: finalTitle, 
+        description, 
+        category, 
+        postType, 
+        images, 
+        videoUrl, 
+        audioUrl, 
+        fileUrl, 
+        authorId: userId,
+        userType,
+        mediaType,
+        mediaUrls
+      } as any,
       include: {
         author: { select: { id: true, fullName: true, role: true } },
       },
@@ -115,8 +142,8 @@ export async function createPost(req: AuthRequest, res: Response): Promise<void>
       category: post.category,
       postType: post.postType,
       authorId: post.authorId,
-      authorName: post.author.fullName,
-      authorRole: post.author.role,
+      authorName: (post as any).author?.fullName || 'Community Member',
+      authorRole: (post as any).author?.role || 'USER',
       likes: [],
       comments: [],
       savedUsers: [],
@@ -124,6 +151,9 @@ export async function createPost(req: AuthRequest, res: Response): Promise<void>
       videoUrl: post.videoUrl,
       audioUrl: post.audioUrl,
       fileUrl: post.fileUrl,
+      userType: (post as any).userType,
+      mediaType: (post as any).mediaType,
+      mediaUrls: (post as any).mediaUrls,
       createdAt: post.createdAt.toISOString(),
     };
 
