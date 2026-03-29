@@ -56,31 +56,41 @@ export default function CommunityFeed() {
     }
   }, [category, search]);
 
+  // Load posts when filters change
   useEffect(() => {
     loadPosts();
+  }, [loadPosts]);
 
-    socket.on('post:created', (newPost: Post) => {
-      setPosts(prev => [newPost, ...prev]);
-    });
+  // Socket listeners - registered once, independent of filter state
+  useEffect(() => {
+    const handlePostCreated = (_newPost: Post) => {
+      // Always do a full reload so we get fresh server data
+      loadPosts();
+    };
 
-    socket.on('post:liked', ({ postId, userId, liked }: { postId: string, userId: string, liked: boolean }) => {
+    const handlePostLiked = ({ postId, userId, liked }: { postId: string, userId: string, liked: boolean }) => {
       setPosts(prev => prev.map(p => {
         if (p.id !== postId) return p;
         const newLikes = liked ? [...p.likes, userId] : p.likes.filter(id => id !== userId);
         return { ...p, likes: newLikes };
       }));
-    });
+    };
 
-    socket.on('post:commented', (comment: any) => {
+    const handlePostCommented = (comment: any) => {
       setPosts(prev => prev.map(p => p.id === comment.postId ? { ...p, comments: [...p.comments, comment] } : p));
-    });
+    };
+
+    socket.on('post:created', handlePostCreated);
+    socket.on('post:liked', handlePostLiked);
+    socket.on('post:commented', handlePostCommented);
 
     return () => {
-      socket.off('post:created');
-      socket.off('post:liked');
-      socket.off('post:commented');
+      socket.off('post:created', handlePostCreated);
+      socket.off('post:liked', handlePostLiked);
+      socket.off('post:commented', handlePostCommented);
     };
-  }, [loadPosts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
