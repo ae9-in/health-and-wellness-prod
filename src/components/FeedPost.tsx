@@ -13,16 +13,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const getFallbackImage = (category: string) => {
-  const fallbacks: Record<string, string> = {
-    'Mental Health': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=800',
-    'Nutrition': 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=800',
-    'Fitness': 'https://images.unsplash.com/photo-1517836357463-d25dfe09ce14?auto=format&fit=crop&q=80&w=800',
-    'Sleep': 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&q=80&w=800',
-    'Ayurveda': 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&q=80&w=800',
-  };
-  return fallbacks[category] || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=800';
-};
+
 
 interface FeedPostProps {
   post: Post;
@@ -49,11 +40,8 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    const target = e.currentTarget;
-    const fallback = getFallbackImage(post.category);
-    if (target.src !== fallback) {
-      target.src = fallback;
-    }
+    // Hide broken images instead of swapping in a dummy photo
+    e.currentTarget.style.display = 'none';
   };
 
   const handleLike = async () => {
@@ -191,17 +179,7 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
             </div>
           ) : null}
 
-          {/* Fallback rendering - ONLY if no images AND no video AND no mediaUrls */}
-          {(!post.images || post.images.length === 0) && !post.videoUrl && (!post.mediaUrls || post.mediaUrls.length === 0) && (
-            <div className="relative overflow-hidden aspect-[21/9]">
-              <img 
-                src={getFallbackImage(post.category || '')} 
-                alt={post.category}
-                className="w-full h-full object-cover opacity-90"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            </div>
-          )}
+
 
           {post.videoUrl && !post.images?.length && (
             <div className="relative aspect-video bg-slate-900 flex items-center justify-center group/vid cursor-pointer" onClick={(e) => e.stopPropagation()}>
@@ -345,8 +323,8 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
                 <div className="flex-1 relative">
                   <Input 
                     placeholder="Share your perspective..." 
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleComment()}
                     onClick={(event) => event.stopPropagation()}
                     className="rounded-2xl h-14 bg-white border-slate-100 focus-visible:ring-primary pl-6 pr-12 shadow-sm"
