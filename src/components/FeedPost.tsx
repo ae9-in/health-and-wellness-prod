@@ -36,7 +36,11 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
   const getMediaUrl = (url?: string) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    if (url.startsWith('data:')) return url;
+    
+    // Legacy mapping: old images on production DB have relative paths but don't exist on local disk
+    const legacyProdBase = 'https://health-and-wellness-prod.onrender.com';
+    return `${legacyProdBase}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {

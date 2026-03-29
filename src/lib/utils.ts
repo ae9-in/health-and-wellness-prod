@@ -33,6 +33,8 @@ export function resolveImageUrl(url: string | undefined): string {
   if (url.startsWith('http')) return url;
   if (url.startsWith('data:')) return url;
   
-  const baseUrl = API_BASE.replace('/api', '');
-  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  // Legacy relative paths (from older posts/products uploaded to production)
+  // Since they don't exist on the local disk when running dev, we point them to production
+  const legacyProdBase = 'https://health-and-wellness-prod.onrender.com';
+  return `${legacyProdBase}${url.startsWith('/') ? '' : '/'}${url}`;
 }
