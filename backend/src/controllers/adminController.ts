@@ -635,13 +635,13 @@ export async function getGlobalSettings(req: Request, res: Response): Promise<vo
 // Update a global setting
 export async function updateGlobalSetting(req: Request, res: Response): Promise<void> {
   try {
-    const { key } = req.params;
+    const key = String(req.params.key);
     const { value } = req.body;
 
     const setting = await prisma.globalSetting.upsert({
-      where: { key },
+      where: { key: key },
       update: { value: String(value) },
-      create: { key, value: String(value) },
+      create: { key: key, value: String(value) },
     });
 
     res.json(setting);
