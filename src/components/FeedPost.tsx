@@ -6,7 +6,7 @@ import {
   Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, 
   Play, Check, Heart as HeartFilled, ShoppingCart, 
   ExternalLink, ArrowRight, ShieldCheck, Crown, Star, 
-  Zap, Trophy, Sparkles, BookOpen, Quote, Video, FileText
+  Zap, Trophy, Sparkles, BookOpen, Quote, Video, FileText, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -148,10 +148,33 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
             </div>
           </div>
         </div>
-        <button className="h-10 w-10 flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-2xl transition-all">
-          <MoreHorizontal className="h-6 w-6" />
-        </button>
+        
+        <div className="flex items-center gap-2">
+          {(user?.id === post.authorId || user?.role === 'ADMIN') && (
+            <button 
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (!window.confirm('Are you sure you want to delete this post?')) return;
+                try {
+                  if (!token) return;
+                  await import('@/lib/api').then(m => m.deletePost(token, post.id));
+                  toast.success('Post deleted successfully');
+                } catch (err: any) {
+                  toast.error(err.message || 'Failed to delete post');
+                }
+              }}
+              className="h-10 w-10 flex items-center justify-center text-red-300 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all"
+              title="Delete Post"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+          )}
+          <button className="h-10 w-10 flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-2xl transition-all">
+            <MoreHorizontal className="h-6 w-6" />
+          </button>
+        </div>
       </div>
+
 
       {/* Main Content Title */}
       <div className="px-8 pb-4">

@@ -107,8 +107,20 @@ export async function togglePostLike(token: string, postId: string) {
 }
 
 export async function addComment(token: string, postId: string, commentText: string) {
-  return request<{ message: string; comment: Post['comments'][0] }>(`/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ commentText }) }, token);
+  return request<{ id: string; commentText: string }>(
+    `/posts/${postId}/comments`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ commentText }),
+    },
+    token
+  );
 }
+
+export async function deletePost(token: string, postId: string) {
+  return request<{ success: true }>(`/posts/${postId}`, { method: 'DELETE' }, token);
+}
+
 
 export async function toggleSavePost(token: string, postId: string) {
   return request<{ saved: boolean }>(`/posts/${postId}/save`, { method: 'POST' }, token);

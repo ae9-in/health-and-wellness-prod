@@ -250,6 +250,42 @@ export async function toggleSave(req: AuthRequest, res: Response): Promise<void>
   }
 }
 
+// Delete a post
+export async function deletePost(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const postId = req.params.postId as string;
+    const userId = req.userId!;
+    
+    // Find the post first
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true }
+    });
+
+    if (!post) {
+      res.status(404).json({ error: 'Post not found' });
+      return;
+    }
+
+    // Admins delete via adminController, so here we STRICTLY enforce author ID
+    if (post.authorId !== userId) {
+      res.status(403).json({ error: 'You are not authorized to delete this post' });
+      return;
+    }
+
+    await prisma.post.delete({
+      where: { id: postId }
+    });
+
+    (req as any).io.emit('post:deleted', postId);
+
+    res.json({ success: true, message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error('Delete post error:', error);
+    res.status(500).json({ error: 'Internal server error while deleting post' });
+  }
+}
+
 // Add a comment to a post
 export async function addComment(req: AuthRequest, res: Response): Promise<void> {
   try {
