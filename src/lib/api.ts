@@ -98,8 +98,12 @@ export async function getAffiliateDashboard(token: string) {
   }>('/affiliates/dashboard', { method: 'GET' }, token);
 }
 
-export async function createPost(token: string, payload: Partial<Post>) {
-  return request<Post>('/posts', { method: 'POST', body: JSON.stringify(payload) }, token);
+export async function createPost(token: string, payload: Partial<Post> | FormData) {
+  const isFormData = payload instanceof FormData;
+  return request<Post>('/posts', { 
+    method: 'POST', 
+    body: isFormData ? payload : JSON.stringify(payload) 
+  }, token);
 }
 
 export async function togglePostLike(token: string, postId: string) {
@@ -213,6 +217,10 @@ export async function reviewProduct(token: string, productId: string, status: st
   return request<Product>(`/admin/products/${productId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }, token);
 }
 
+export async function updateAdminProduct(token: string, productId: string, product: FormData) {
+  return request<Product>(`/admin/products/${productId}`, { method: 'PUT', body: product }, token);
+}
+
 export async function deleteAdminProduct(token: string, productId: string) {
   return request<{ message: string }>(`/admin/products/${productId}`, { method: 'DELETE' }, token);
 }
@@ -302,8 +310,12 @@ export async function markNotificationRead(token: string, id: string) {
   return request<{ success: boolean }>(`/notifications/${id}/read`, { method: 'PUT' }, token);
 }
 
-export async function updatePostAdmin(token: string, id: string, payload: Partial<Post>) {
-  return request<Post>(`/admin/posts/${id}`, { method: 'PUT', body: JSON.stringify(payload) }, token);
+export async function updatePostAdmin(token: string, id: string, payload: Partial<Post> | FormData) {
+  const isFormData = payload instanceof FormData;
+  return request<Post>(`/admin/posts/${id}`, { 
+    method: 'PUT', 
+    body: isFormData ? payload : JSON.stringify(payload) 
+  }, token);
 }
 
 export async function deletePostAdmin(token: string, id: string) {

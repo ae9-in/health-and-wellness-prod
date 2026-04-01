@@ -7,6 +7,7 @@ import { Heart, Users, Calendar, Shield, ArrowRight, Handshake, Leaf, MessageSqu
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getPosts, getSessions, getProducts, getPublicSettings } from '@/lib/api';
+import { resolveImageUrl } from '@/lib/utils';
 
 
 
@@ -515,7 +516,14 @@ const productFilters = ['Category', 'Price', 'Brand', 'Popular products'];
                   <div className="grid gap-4">
                     {featuredProducts.slice(0, 3).map(product => (
                       <div key={product.id} className="bg-white rounded-2xl border border-border/40 p-4 flex gap-3 items-center">
-                        <img src={product.images?.[0] || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80'} alt={product.name} className="h-16 w-16 rounded-2xl object-cover border border-border/30" />
+                        <img 
+                          src={resolveImageUrl(product.images?.[0])} 
+                          alt={product.name} 
+                          className="h-16 w-16 rounded-2xl object-cover border border-border/30" 
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://placehold.co/400x300?text=No+Image';
+                          }}
+                        />
                         <div className="flex-1">
                           <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">{product.brand?.name || 'Wellspring'}</p>
                           <p className="font-black text-sm line-clamp-2">{product.name}</p>

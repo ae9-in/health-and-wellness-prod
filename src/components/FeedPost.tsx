@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Post } from '@/lib/types';
 import { togglePostLike, toggleSavePost, addComment, API_BASE as API_URL } from '@/lib/api';
+import { resolveImageUrl } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { 
   Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, 
@@ -30,18 +31,14 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Robust Base URL for media
-  const baseUrl = API_URL.includes('://') ? API_URL.replace('/api', '') : window.location.origin;
-
-  const getMediaUrl = (url?: string) => {
-    if (!url) return '';
-    if (url.startsWith('http')) return url;
-    if (url.startsWith('data:')) return url;
-    
-    // Legacy mapping: old images on production DB have relative paths but don't exist on local disk
-    const legacyProdBase = 'https://health-and-wellness-prod.onrender.com';
-    return `${legacyProdBase}${url.startsWith('/') ? '' : '/'}${url}`;
-  };
+  // Sync state when post prop changes (e.g. from a parent re-fetch)
+  useEffect(() => {
+    setIsLiked(user ? post.likes.includes(user.id) : false);
+    setLikesCount(post.likes.length);
+    setIsSaved(user ? (post as any).savedUsers?.includes(user.id) : false);
+  }, [post, user]);
+  
+  
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     // Hide broken images instead of swapping in a dummy photo
@@ -152,16 +149,23 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
         <div className="flex items-center gap-2">
           {(user?.id === post.authorId || user?.role === 'ADMIN') && (
             <button 
-              onClick={async (e) => {
+              onClick={(e) => {
                 e.stopPropagation();
-                if (!window.confirm('Are you sure you want to delete this post?')) return;
-                try {
-                  if (!token) return;
-                  await import('@/lib/api').then(m => m.deletePost(token, post.id));
-                  toast.success('Post deleted successfully');
-                } catch (err: any) {
-                  toast.error(err.message || 'Failed to delete post');
-                }
+                toast('Are you sure you want to delete this post?', {
+                  action: {
+                    label: 'Delete',
+                    onClick: async () => {
+                      try {
+                        if (!token) return;
+                        await import('@/lib/api').then(m => m.deletePost(token, post.id));
+                        toast.success('Post deleted successfully');
+                      } catch (err: any) {
+                        toast.error(err.message || 'Failed to delete post');
+                      }
+                    }
+                  },
+                  cancel: { label: 'Cancel', onClick: () => {} }
+                });
               }}
               className="h-10 w-10 flex items-center justify-center text-red-300 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all"
               title="Delete Post"
@@ -191,7 +195,7 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
               {post.images.slice(0, 4).map((img, idx) => (
                 <div key={idx} className="relative overflow-hidden aspect-video group/img">
                   <img 
-                    src={getMediaUrl(img)} 
+                    src={resolveImageUrl(img)} 
                     alt={`Post image ${idx + 1}`}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     onError={handleImageError}
@@ -215,7 +219,7 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
                 playsInline
                 className="w-full h-full object-cover opacity-90 group-hover/vid:opacity-100 transition-opacity"
               >
-                <source src={getMediaUrl(post.videoUrl)} />
+                <source src={resolveImageUrl(post.videoUrl)} />
                 Your browser does not support the video tag.
               </video>
             </div>

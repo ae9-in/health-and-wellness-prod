@@ -581,6 +581,16 @@ body.has-custom-cursor {
   cursor: none;
 }
 
+body.has-custom-cursor.cursor-hidden {
+  cursor: auto !important;
+}
+
+body.has-custom-cursor.cursor-hidden .custom-cursor-dot,
+body.has-custom-cursor.cursor-hidden .custom-cursor-ring {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
 @keyframes marquee {
   0% {
     transform: translateX(0);

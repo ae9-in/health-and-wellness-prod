@@ -39,27 +39,50 @@ const CustomCursor = () => {
 
     const handlePointerOver = (event: PointerEvent) => {
       const target = event.target as HTMLElement;
-      const hoverable = Boolean(target.closest('button, .cursor-grow'));
+      const hoverable = Boolean(target.closest('button, .cursor-grow, a, [role="button"]'));
       setActive(hoverable);
+      
+      const isText = Boolean(target.closest('input, textarea, [contenteditable]'));
+      if (isText) {
+        document.body.classList.add('cursor-hidden');
+      } else {
+        document.body.classList.remove('cursor-hidden');
+      }
     };
 
     const handlePointerOut = (event: PointerEvent) => {
       const related = event.relatedTarget as HTMLElement | null;
-      if (!related || !related.closest('button, .cursor-grow')) {
+      if (!related || !related.closest('input, textarea, [contenteditable]')) {
+        document.body.classList.remove('cursor-hidden');
+      }
+      if (!related || !related.closest('button, .cursor-grow, a, [role="button"]')) {
         setActive(false);
+      }
+    };
+
+    const handleKeyDown = () => {
+      document.body.classList.add('cursor-hidden');
+    };
+
+    const handlePointerMoveForVisibility = () => {
+      // Only remove if we aren't hovering over a text element right now
+      if (!document.querySelector('input:hover, textarea:hover, [contenteditable]:hover')) {
+        document.body.classList.remove('cursor-hidden');
       }
     };
 
     document.addEventListener('pointerover', handlePointerOver);
     document.addEventListener('pointerout', handlePointerOut);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('pointermove', handlePointerMoveForVisibility);
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
       document.removeEventListener('pointermove', handlePointerMove);
       document.removeEventListener('pointerover', handlePointerOver);
       document.removeEventListener('pointerout', handlePointerOut);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('pointermove', handlePointerMoveForVisibility);
     };
   }, []);
 

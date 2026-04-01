@@ -211,6 +211,8 @@ model Post {
   userType    String?   @default("user")
   mediaType   String?   @default("none")
   mediaUrls   String[]  @default([])
+  published   Boolean   @default(true)
+  tags        String[]  @default([])
 }
 
 model SavedPost {

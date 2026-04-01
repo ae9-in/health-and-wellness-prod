@@ -29,6 +29,24 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
     if (decoded.isAdmin && !decoded.userId) {
       req.isAdmin = true;
       req.userRole = Role.ADMIN;
+      
+      // Systemic Fix: Ensure req.userId is set for admins even if not in token
+      const adminCreds = getAdminCredentials();
+      if (adminCreds) {
+        let adminUser = await prisma.user.findUnique({ where: { email: adminCreds.email } });
+        if (!adminUser) {
+          adminUser = await prisma.user.create({
+            data: {
+              email: adminCreds.email,
+              fullName: 'Admin',
+              password: 'admin-no-login',
+              role: Role.ADMIN,
+            },
+          });
+        }
+        req.userId = adminUser.id;
+      }
+      
       next();
       return;
     }

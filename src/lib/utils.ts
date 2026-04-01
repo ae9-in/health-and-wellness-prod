@@ -29,12 +29,17 @@ export function parseVariants(variants: any): any[] {
 import { API_BASE } from './api';
 
 export function resolveImageUrl(url: string | undefined): string {
-  if (!url) return ''; // No image — let UI handle its own empty state
+  if (!url) return 'https://placehold.co/400x300?text=No+Image'; 
+  
   if (url.startsWith('http')) return url;
+  if (url.startsWith('https://res.cloudinary.com')) return url;
   if (url.startsWith('data:')) return url;
   
-  // Legacy relative paths (from older posts/products uploaded to production)
-  // Since they don't exist on the local disk when running dev, we point them to production
-  const legacyProdBase = 'https://health-and-wellness-prod.onrender.com';
-  return `${legacyProdBase}${url.startsWith('/') ? '' : '/'}${url}`;
+  // Get backend base by removing /api from API_BASE
+  const backendBase = API_BASE.replace(/\/api$/, '');
+  
+  // Ensure the URL starts with a slash
+  const path = url.startsWith('/') ? url : `/${url}`;
+  
+  return `${backendBase}${path}`;
 }

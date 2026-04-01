@@ -120,15 +120,19 @@ export default function UserDashboard() {
                 </h3>
                 <div className="space-y-4">
                   {recentDiscussions.map(entry => (
-                    <div key={`${entry.type}-${entry.id}`} className="p-4 rounded-xl bg-muted/20 border border-border/40">
-                      <p className="font-bold text-sm mb-1 line-clamp-1">{entry.title}</p>
+                    <Link 
+                      key={`${entry.type}-${entry.id}`} 
+                      to={`/discussions`}
+                      className="block p-4 rounded-xl bg-muted/20 border border-border/40 hover:bg-white hover:shadow-md transition-all group"
+                    >
+                      <p className="font-bold text-sm mb-1 line-clamp-1 group-hover:text-primary transition-colors">{entry.title}</p>
                       <p className="text-xs text-muted-foreground uppercase tracking-[0.3em] mb-2">
                         {entry.type === 'comment' ? 'Commented' : 'Posted'} {new Date(entry.date).toLocaleDateString()}
                       </p>
                       <p className="text-sm text-slate-600 line-clamp-2">
                         {entry.snippet}
                       </p>
-                    </div>
+                    </Link>
                   ))}
                   {recentDiscussions.length === 0 && (
                     <p className="text-sm text-muted-foreground italic py-4">

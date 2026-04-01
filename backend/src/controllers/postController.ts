@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { AuthRequest } from '../middlewares/authMiddleware';
 import { createNotification } from './notificationsController';
+import { uploadToCloudinary } from '../config/cloudinary';
 
 // Get all posts with author info, likes count, and comments
 export async function getPosts(req: Request, res: Response): Promise<void> {
@@ -67,6 +68,8 @@ export async function getPosts(req: Request, res: Response): Promise<void> {
       userType: p.userType,
       mediaType: p.mediaType,
       mediaUrls: p.mediaUrls || [],
+      published: p.published !== undefined ? p.published : true,
+      tags: p.tags || [],
       createdAt: p.createdAt.toISOString(),
     }));
 
@@ -80,7 +83,17 @@ export async function getPosts(req: Request, res: Response): Promise<void> {
 // Create a new post
 export async function createPost(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const { title, description, category = 'General', postType = 'ARTICLE', userType = 'user' } = req.body;
+    const { title, description, category = 'General', postType = 'ARTICLE', userType = 'user', published: publishedRaw, tags: tagsRaw } = req.body;
+
+    const published = publishedRaw === 'true' || publishedRaw === true;
+    let tags = tagsRaw;
+    if (typeof tags === 'string') {
+      try { tags = JSON.parse(tags); } catch { tags = tags.split(',').map((t: string) => t.trim()).filter(Boolean); }
+    } else if (!Array.isArray(tags)) {
+      tags = req.body['tags[]'] || req.body['tags'] || [];
+      if (!Array.isArray(tags)) tags = [tags].filter(Boolean);
+    }
+    
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     let images: string[] = [];
@@ -91,19 +104,28 @@ export async function createPost(req: AuthRequest, res: Response): Promise<void>
     let mediaType = 'none';
 
     if (files) {
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
       if (files['images']) {
-        images = files['images'].map(f => `${baseUrl}/uploads/${f.filename}`);
+        for (const file of files['images']) {
+          const result = await uploadToCloudinary(file.buffer, 'posts/images');
+          images.push(result.secure_url);
+        }
         mediaUrls = [...mediaUrls, ...images];
         mediaType = 'image';
       }
       if (files['video']) {
-        videoUrl = `${baseUrl}/uploads/${files['video'][0].filename}`;
+        const result = await uploadToCloudinary(files['video'][0].buffer, 'posts/videos');
+        videoUrl = result.secure_url;
         mediaUrls.push(videoUrl);
         mediaType = 'video';
       }
-      if (files['audio']) audioUrl = `${baseUrl}/uploads/${files['audio'][0].filename}`;
-      if (files['file']) fileUrl = `${baseUrl}/uploads/${files['file'][0].filename}`;
+      if (files['audio']) {
+        const result = await uploadToCloudinary(files['audio'][0].buffer, 'posts/audio');
+        audioUrl = result.secure_url;
+      }
+      if (files['file']) {
+        const result = await uploadToCloudinary(files['file'][0].buffer, 'posts/files');
+        fileUrl = result.secure_url;
+      }
     }
 
     const userId = req.userId!;
@@ -129,7 +151,9 @@ export async function createPost(req: AuthRequest, res: Response): Promise<void>
         authorId: userId,
         userType,
         mediaType,
-        mediaUrls
+        mediaUrls,
+        published,
+        tags
       } as any,
       include: {
         author: { select: { id: true, fullName: true, role: true } },
@@ -155,6 +179,8 @@ export async function createPost(req: AuthRequest, res: Response): Promise<void>
       userType: (post as any).userType,
       mediaType: (post as any).mediaType,
       mediaUrls: (post as any).mediaUrls,
+      published: (post as any).published,
+      tags: (post as any).tags,
       createdAt: post.createdAt.toISOString(),
     };
 

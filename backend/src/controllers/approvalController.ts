@@ -3,6 +3,8 @@ import { ApprovalStatus } from '@prisma/client';
 import { Server } from 'socket.io';
 import prisma from '../lib/prisma';
 import { createNotification } from './notificationsController';
+import { normalizeImageUrls } from '../lib/utils';
+import { uploadToCloudinary } from '../config/cloudinary';
 
 type RealtimeRequest = { io?: Server };
 
@@ -191,5 +193,54 @@ export async function deleteAffiliate(req: any & RealtimeRequest, res: Response)
   } catch (error) {
     console.error('Delete affiliate error:', error);
     res.status(500).json({ error: 'Unable to delete affiliate' });
+  }
+}
+export async function updateAdminProduct(req: any & RealtimeRequest, res: Response): Promise<void> {
+  try {
+    const { productId } = req.params;
+    const { name, category, description, images, imageUrls, price, commissionRate, stock, variants } = req.body;
+
+    const updateData: any = {};
+    if (name) updateData.name = name.trim();
+    if (category) updateData.category = category;
+    if (description) updateData.description = description.trim();
+    if (price !== undefined) updateData.price = parseFloat(price);
+    if (commissionRate !== undefined) updateData.commissionRate = parseFloat(commissionRate);
+    if (stock !== undefined) updateData.stock = Math.floor(Number(stock));
+
+    if (variants) {
+      try {
+        updateData.variants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+      } catch (err) {
+        console.error('Failed to parse variants for admin update:', err);
+      }
+    }
+
+    const files = req.files as Express.Multer.File[] | undefined;
+    const cloudinaryUrls: string[] = [];
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const result = await uploadToCloudinary(file.buffer, 'products');
+        cloudinaryUrls.push(result.secure_url);
+      }
+    }
+
+    const existingImages = normalizeImageUrls(imageUrls || images);
+    
+    if (existingImages.length > 0 || cloudinaryUrls.length > 0) {
+      updateData.images = [...existingImages, ...cloudinaryUrls];
+    }
+
+    const product = await (prisma.product as any).update({
+      where: { id: productId },
+      data: updateData,
+      include: { brand: { include: { user: true } } },
+    });
+
+    req.io?.emit('product:updated', product);
+    res.json({ success: true, product });
+  } catch (error) {
+    console.error('Admin update product error:', error);
+    res.status(500).json({ error: 'Unable to update product' });
   }
 }

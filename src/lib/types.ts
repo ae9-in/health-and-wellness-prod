@@ -81,12 +81,15 @@ export interface Post {
   postType: string; // Dynamic
   images: string[];
   videoUrl?: string;
+  video?: string;
   audioUrl?: string;
   fileUrl?: string;
   userType?: string;
   mediaType?: string;
   mediaUrls?: string[];
   sponsored?: boolean;
+  published?: boolean;
+  tags?: string[];
 }
 
 export interface Session {

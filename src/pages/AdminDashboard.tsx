@@ -47,9 +47,11 @@ import {
   Globe, LayoutDashboard, Search, Filter, ArrowUpRight, ShieldAlert, BadgeCheck, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, resolveImageUrl } from '@/lib/utils';
+import EditProductModal from '@/components/EditProductModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { socket } from '@/lib/socket';
+import FeedManagementContent from '@/components/admin/FeedManagementContent';
 
 type GrowthPoint = {
   label: string;
@@ -149,6 +151,8 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   
   const [activeTab, setActiveTab] = useState('overview');
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Queries
@@ -287,7 +291,13 @@ export default function AdminDashboard() {
   const handleUserAction = (id: string, action: 'block' | 'delete') => {
     if (action === 'block') blockMutation.mutate(id);
     if (action === 'delete') {
-      if (confirm('Permanently delete this user?')) deleteUserMutation.mutate(id);
+      toast('Permanently delete this user?', {
+        action: {
+          label: 'Delete',
+          onClick: () => deleteUserMutation.mutate(id)
+        },
+        cancel: { label: 'Cancel', onClick: () => {} }
+      });
     }
   };
 
@@ -296,7 +306,13 @@ export default function AdminDashboard() {
   const handleDeletePost = (id: string) => deletePostMutation.mutate(id);
   const handleToggleSponsored = (id: string) => toggleSponsoredMutation.mutate(id);
   const handleDeleteComment = (id: string) => {
-    if (confirm('Remove this comment from the community?')) deleteCommentMutation.mutate(id);
+    toast('Remove this comment from the community?', {
+      action: {
+        label: 'Delete',
+        onClick: () => deleteCommentMutation.mutate(id)
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
   const handleCreateSession = () => {
@@ -313,7 +329,13 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteSession = (id: string) => {
-    if (confirm('Delete this session?')) deleteSessionMutation.mutate(id);
+    toast('Delete this session?', {
+      action: {
+        label: 'Delete',
+        onClick: () => deleteSessionMutation.mutate(id)
+      },
+      cancel: { label: 'Cancel', onClick: () => {} }
+    });
   };
 
   const filteredUsers = users.filter(u => u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -348,7 +370,7 @@ export default function AdminDashboard() {
               { id: 'partners', label: 'Partner Hub', icon: Handshake },
               { id: 'marketplace', label: 'Marketplace', icon: Package },
               { id: 'commission-requests', label: 'Commission Queue', icon: TrendingUp },
-              { id: 'content', label: 'Content Lab', icon: MessageSquare },
+              { id: 'feed-manager', label: 'Feed Manager', icon: MessageSquare },
               { id: 'sessions', label: 'Wellness Events', icon: Calendar },
               { id: 'settings', label: 'Platform Settings', icon: Globe },
             ].map(item => (
@@ -394,6 +416,7 @@ export default function AdminDashboard() {
                  activeTab === 'users' ? 'Member Management' : 
                  activeTab === 'partners' ? 'Partner Ecosystem' : 
                  activeTab === 'marketplace' ? 'Marketplace Control' :
+                 activeTab === 'feed-manager' ? 'Feed Management' :
                  activeTab === 'settings' ? 'Platform Settings' :
                  'Moderation Suite'}
               </h1>
@@ -928,7 +951,14 @@ export default function AdminDashboard() {
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-4">
                               <div className="relative h-14 w-14 rounded-2xl overflow-hidden shadow-md">
-                                <img src={p.images?.[0] || 'https://via.placeholder.com/80'} alt="" className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                <img 
+                                  src={resolveImageUrl(p.images?.[0])} 
+                                  alt="" 
+                                  className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                  onError={(e) => {
+                                    e.currentTarget.src = 'https://placehold.co/400x300?text=No+Image';
+                                  }}
+                                />
                               </div>
                               <div>
                                 <div className="font-black text-[#1A2E05]">{p.name}</div>
@@ -969,6 +999,17 @@ export default function AdminDashboard() {
                                   )}
                                 </>
                               )}
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-9 w-9 p-0 rounded-xl border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30"
+                                onClick={() => {
+                                  setEditingProduct(p);
+                                  setIsEditModalOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
                               <Button variant="ghost" size="icon" className="h-9 w-9 p-0 text-destructive rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleProductDelete(p.id)}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -982,92 +1023,9 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {activeTab === 'content' && (
-              <div className="grid gap-6">
-                <div className="bg-white rounded-[2.5rem] border border-border/50 shadow-sm overflow-hidden p-8">
-                  <div className="flex items-center justify-between mb-8">
-                    <h3 className="font-black text-xl">Content Moderation Queue</h3>
-                    <div className="flex items-center gap-2">
-                       <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                       <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Scanning Platform...</span>
-                    </div>
-                  </div>
-                  
-                  <div className="grid gap-6">
-                    {posts.map(post => (
-                      <div key={post.id} className="flex flex-col md:flex-row items-center gap-6 p-6 rounded-3xl bg-muted/20 border border-border/40 hover:bg-muted/30 transition-all">
-                        <div className="h-20 w-20 rounded-2xl bg-white shadow-sm flex-shrink-0 flex items-center justify-center p-2 relative">
-                           <MessageSquare className="h-8 w-8 text-primary/40" />
-                           {post.sponsored && (
-                             <div className="absolute -top-2 -right-2 bg-amber-100 text-amber-600 p-1.5 rounded-lg shadow-sm">
-                               <BadgeCheck className="h-4 w-4" />
-                             </div>
-                           )}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-black text-lg text-[#1A2E05] line-clamp-1">{post.title}</h4>
-                          <p className="text-sm text-muted-foreground font-medium line-clamp-1 mb-2">{post.description}</p>
-                          <div className="flex items-center gap-4">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1">
-                              <Users className="h-3 w-3" /> {post.authorName}
-                            </span>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                              {post.category}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                           <Button 
-                             variant="ghost" 
-                             size="sm" 
-                             className={`rounded-xl font-bold h-10 px-4 transition-all ${post.sponsored ? 'bg-amber-50 text-amber-600' : 'text-emerald-600 hover:bg-emerald-50'}`}
-                             onClick={() => handleToggleSponsored(post.id)}
-                           >
-                             {post.sponsored ? 'Featured' : 'Feature'}
-                           </Button>
-                           <Button variant="ghost" size="sm" className="rounded-xl font-bold h-10 px-4 text-destructive hover:bg-destructive/10" onClick={() => handleDeletePost(post.id)}>Censor</Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-              </div>
-              <div className="bg-white rounded-[2.5rem] border border-border/50 shadow-sm overflow-hidden p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-black text-xl">Comment Oversight</h3>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Live Feed</span>
-                </div>
-                {comments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground font-medium">No flagged comments available yet.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {comments.map(comment => (
-                      <div key={comment.id} className="p-4 rounded-2xl bg-muted/20 border border-border/40 flex flex-col gap-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div>
-                            <p className="font-black text-sm text-[#1A2E05] line-clamp-1">{comment.userFullName}</p>
-                            <p className="text-xs font-bold text-muted-foreground line-clamp-1">{comment.userEmail}</p>
-                          </div>
-                          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">
-                            {new Date(comment.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </div>
-                        </div>
-                        <p className="text-[12px] text-slate-600 leading-relaxed line-clamp-3">{comment.commentText}</p>
-                        <p className="text-[11px] uppercase tracking-[0.3em] text-primary font-black">Post: {comment.postTitle}</p>
-                        <div className="flex flex-wrap gap-2">
-                          <Button variant="outline" size="sm" className="rounded-xl text-destructive border-destructive/40 font-black text-[10px]" onClick={() => handleDeleteComment(comment.id)}>
-                            <Trash2 className="h-3 w-3" /> Delete Comment
-                          </Button>
-                          <Button variant="ghost" size="sm" className="rounded-xl text-destructive border text-destructive/40 font-black text-[10px]" onClick={() => handleUserAction(comment.userId, 'delete')}>
-                            Remove User
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+            {activeTab === 'feed-manager' && (
+              <FeedManagementContent />
+            )}
 
             {activeTab === 'commission-requests' && (
               <div className="bg-white rounded-[2.5rem] border border-border/50 shadow-sm overflow-hidden">
@@ -1144,12 +1102,16 @@ export default function AdminDashboard() {
                                   size="sm" 
                                   className="h-9 px-5 rounded-xl font-black text-[10px] uppercase tracking-widest text-destructive border-destructive/20 hover:bg-destructive/10"
                                   onClick={() => {
-                                    if (confirm('Reject this commission request?')) {
-                                      commissionRequestMutation.mutate({
-                                        id: req.id,
-                                        payload: { status: 'REJECTED' }
-                                      });
-                                    }
+                                    toast('Reject this commission request?', {
+                                      action: {
+                                        label: 'Reject',
+                                        onClick: () => commissionRequestMutation.mutate({
+                                          id: req.id,
+                                          payload: { status: 'REJECTED' }
+                                        })
+                                      },
+                                      cancel: { label: 'Cancel', onClick: () => {} }
+                                    });
                                   }}
                                   disabled={commissionRequestMutation.isPending}
                                 >
@@ -1262,6 +1224,13 @@ export default function AdminDashboard() {
               </div>
             )}
           </AnimatePresence>
+          <EditProductModal 
+            product={editingProduct} 
+            open={isEditModalOpen} 
+            onOpenChange={setIsEditModalOpen} 
+            onSuccess={() => queryClient.invalidateQueries({ queryKey: ['adminProducts'] })}
+            isAdmin={true}
+          />
 
           {/* Platform Settings Tab */}
           {activeTab === 'settings' && (

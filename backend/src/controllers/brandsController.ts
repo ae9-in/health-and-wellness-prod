@@ -3,6 +3,8 @@ import prisma from '../lib/prisma';
 import { AuthRequest } from '../middlewares/authMiddleware';
 import { createNotification } from './notificationsController';
 import { ApprovalStatus } from '@prisma/client';
+import { uploadToCloudinary } from '../config/cloudinary';
+import { normalizeImageUrls } from '../lib/utils';
 
 async function ensureBrand(userId: string) {
   const brand = await prisma.brand.findUnique({ where: { userId } });
@@ -10,14 +12,6 @@ async function ensureBrand(userId: string) {
   return brand;
 }
 
-function normalizeImageUrls(input?: string | string[]): string[] {
-  if (!input) return [];
-  const values = Array.isArray(input) ? input : [input];
-  return values
-    .flatMap(value => value.split(','))
-    .map(value => value.trim())
-    .filter(Boolean);
-}
 
 export async function createProduct(req: AuthRequest, res: Response): Promise<void> {
   try {
@@ -69,6 +63,14 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
     }
 
     const files = req.files as Express.Multer.File[] | undefined;
+    const cloudinaryUrls: string[] = [];
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const result = await uploadToCloudinary(file.buffer, 'products');
+        cloudinaryUrls.push(result.secure_url);
+      }
+    }
+
     const product = await prisma.product.create({
       data: {
         brandId: brand.id,
@@ -76,8 +78,8 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
         category,
         description: description.trim(),
         images: [
-          ...normalizeImageUrls(imageUrls || images), // Look for both for compatibility
-          ...(files?.map(f => `${req.protocol}://${req.get('host')}/uploads/${f.filename}`) ?? [])
+          ...normalizeImageUrls(imageUrls || images),
+          ...cloudinaryUrls
         ],
         price: priceValue,
         commissionRate: commissionValue,
@@ -174,11 +176,18 @@ export async function updateProduct(req: AuthRequest, res: Response): Promise<vo
     }
 
     const files = req.files as Express.Multer.File[] | undefined;
+    const cloudinaryUrls: string[] = [];
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const result = await uploadToCloudinary(file.buffer, 'products');
+        cloudinaryUrls.push(result.secure_url);
+      }
+    }
+
     const existingImages = normalizeImageUrls(imageUrls || images);
-    const newFiles = files?.map(f => `${req.protocol}://${req.get('host')}/uploads/${f.filename}`) ?? [];
     
-    if (existingImages.length > 0 || newFiles.length > 0) {
-      updateData.images = [...existingImages, ...newFiles];
+    if (existingImages.length > 0 || cloudinaryUrls.length > 0) {
+      updateData.images = [...existingImages, ...cloudinaryUrls];
     }
 
     const product = await prisma.product.updateMany({

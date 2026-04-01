@@ -26,11 +26,13 @@ router.put('/partnerships/:partnershipId', updatePartnership);
 router.delete('/partnerships/:partnershipId', deletePartnership);
 
 router.post('/posts', upload.fields([
+  { name: 'images', maxCount: 4 },
   { name: 'video', maxCount: 1 },
   { name: 'audio', maxCount: 1 },
   { name: 'file', maxCount: 1 }
 ]), createAdminPost);
 router.put('/posts/:postId', upload.fields([
+  { name: 'images', maxCount: 4 },
   { name: 'video', maxCount: 1 },
   { name: 'audio', maxCount: 1 },
   { name: 'file', maxCount: 1 }
@@ -51,6 +53,10 @@ router.delete('/affiliates/:affiliateId', deleteAffiliate);
 router.delete('/brands/:brandId', deleteBrand);
 router.get('/products/all', listAdminProducts);
 router.patch('/products/:productId/status', reviewProduct);
+router.put('/products/:productId', upload.array('productImages', 10), (req: any, res: any) => {
+  const { updateAdminProduct } = require('../controllers/approvalController');
+  return updateAdminProduct(req, res);
+});
 router.delete('/products/:productId', deleteAdminProduct);
 router.patch('/posts/:postId/sponsored', togglePostSponsored);
 router.get('/comments', getAllComments);

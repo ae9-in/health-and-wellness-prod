@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '../lib/prisma';
 import { requireAdminCredentials } from '../lib/adminConfig';
 import { ensureAffiliateCoupon, regenerateAffiliateCoupon } from '../lib/coupon';
+import { uploadToCloudinary } from '../config/cloudinary';
 
 // Create a new user (admin)
 export async function createUser(req: Request, res: Response): Promise<void> {
@@ -78,17 +79,43 @@ export async function createUser(req: Request, res: Response): Promise<void> {
 // Create a post as admin (admin token has no userId, so we look up by ADMIN_EMAIL)
 export async function createAdminPost(req: Request, res: Response): Promise<void> {
   try {
-    const { title, description, category } = req.body;
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const { title, description, category, published: publishedRaw, tags: tagsRaw } = req.body;
+
+    const published = publishedRaw === 'true' || publishedRaw === true;
+    let tags = tagsRaw;
+    if (typeof tags === 'string') {
+      try { tags = JSON.parse(tags); } catch { tags = tags.split(',').map((t: string) => t.trim()).filter(Boolean); }
+    } else if (!Array.isArray(tags)) {
+      tags = req.body['tags[]'] || req.body['tags'] || [];
+      if (!Array.isArray(tags)) tags = [tags].filter(Boolean);
+    }
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
     
-    let videoUrl = req.body.videoUrl;
+    let videoUrl = req.body.videoUrl || req.body.video;
     let audioUrl = req.body.audioUrl;
     let fileUrl = req.body.fileUrl;
+    let imageUrls: string[] = req.body.images ? (Array.isArray(req.body.images) ? req.body.images : [req.body.images]) : [];
 
     if (files) {
-      if (files['video']) videoUrl = `/uploads/${files['video'][0].filename}`;
-      if (files['audio']) audioUrl = `/uploads/${files['audio'][0].filename}`;
-      if (files['file']) fileUrl = `/uploads/${files['file'][0].filename}`;
+      if (files['images']) {
+        for (const file of files['images']) {
+          const result = await uploadToCloudinary(file.buffer, 'posts');
+          imageUrls.push(result.secure_url);
+        }
+      }
+      if (files['video']) {
+        const result = await uploadToCloudinary(files['video'][0].buffer, 'posts', 'video');
+        videoUrl = result.secure_url;
+      }
+      if (files['audio']) {
+        const result = await uploadToCloudinary(files['audio'][0].buffer, 'posts', 'video'); // or 'auto'
+        audioUrl = result.secure_url;
+      }
+      if (files['file']) {
+        const result = await uploadToCloudinary(files['file'][0].buffer, 'posts', 'auto');
+        fileUrl = result.secure_url;
+      }
     }
 
     if (!title || !description || !category) {
@@ -99,7 +126,6 @@ export async function createAdminPost(req: Request, res: Response): Promise<void
     const { email: adminEmail } = requireAdminCredentials();
     let adminUser = await prisma.user.findUnique({ where: { email: adminEmail } });
 
-    // Auto-create admin user record if not yet in DB (e.g., fresh DB)
     if (!adminUser) {
       adminUser = await prisma.user.create({
         data: {
@@ -112,7 +138,8 @@ export async function createAdminPost(req: Request, res: Response): Promise<void
     }
 
     const post = await prisma.post.create({
-      data: { title, description, category, videoUrl, audioUrl, fileUrl, authorId: adminUser.id },
+      //@ts-ignore - images property might be missing in some prisma versions or types
+      data: { title, description, category, videoUrl, audioUrl, fileUrl, authorId: adminUser.id, images: imageUrls, published, tags },
       include: { author: { select: { id: true, fullName: true } } },
     });
 
@@ -122,12 +149,15 @@ export async function createAdminPost(req: Request, res: Response): Promise<void
       description: post.description,
       category: post.category,
       authorId: post.authorId,
-      authorName: post.author.fullName,
+      authorName: (post as any).author?.fullName || 'Admin',
       likes: [],
       comments: [],
+      images: (post as any).images || [],
       videoUrl: post.videoUrl,
       audioUrl: post.audioUrl,
       fileUrl: post.fileUrl,
+      published: (post as any).published,
+      tags: (post as any).tags,
       createdAt: post.createdAt.toISOString(),
     };
 
@@ -249,24 +279,60 @@ export async function getAllPayments(_req: Request, res: Response): Promise<void
 export async function updatePost(req: Request, res: Response): Promise<void> {
   try {
     const postId = req.params.postId as string;
-    const { title, description, category } = req.body;
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const { title, description, category, published: publishedRaw, tags: tagsRaw } = req.body;
 
-    let videoUrl = req.body.videoUrl;
+    const published = publishedRaw === undefined ? undefined : (publishedRaw === 'true' || publishedRaw === true);
+    let tags = tagsRaw;
+    if (typeof tags === 'string') {
+      try { tags = JSON.parse(tags); } catch { tags = tags.split(',').map((t: string) => t.trim()).filter(Boolean); }
+    } else if (tagsRaw !== undefined && !Array.isArray(tags)) {
+      tags = req.body['tags[]'] || req.body['tags'] || [];
+      if (!Array.isArray(tags)) tags = [tags].filter(Boolean);
+    }
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+
+    let videoUrl = req.body.videoUrl || req.body.video;
     let audioUrl = req.body.audioUrl;
     let fileUrl = req.body.fileUrl;
+    const imageUrls: string[] = req.body.images ? (Array.isArray(req.body.images) ? req.body.images : [req.body.images]) : [];
 
     if (files) {
-      if (files['video']) videoUrl = `/uploads/${files['video'][0].filename}`;
-      if (files['audio']) audioUrl = `/uploads/${files['audio'][0].filename}`;
-      if (files['file']) fileUrl = `/uploads/${files['file'][0].filename}`;
+      if (files['images']) {
+        for (const file of files['images']) {
+          const result = await uploadToCloudinary(file.buffer, 'posts');
+          imageUrls.push(result.secure_url);
+        }
+      }
+      if (files['video']) {
+        const result = await uploadToCloudinary(files['video'][0].buffer, 'posts', 'video');
+        videoUrl = result.secure_url;
+      }
+      if (files['audio']) {
+        const result = await uploadToCloudinary(files['audio'][0].buffer, 'posts', 'video');
+        audioUrl = result.secure_url;
+      }
+      if (files['file']) {
+        const result = await uploadToCloudinary(files['file'][0].buffer, 'posts', 'auto');
+        fileUrl = result.secure_url;
+      }
     }
 
     const post = await prisma.post.update({
       where: { id: postId },
-      data: { title, description, category, videoUrl, audioUrl, fileUrl },
+      //@ts-ignore
+      data: { 
+        title, 
+        description, 
+        category, 
+        videoUrl, 
+        audioUrl, 
+        fileUrl, 
+        images: imageUrls,
+        published,
+        tags
+      },
     });
-    // Can optionally emit custom socket events here if needed, but the original ones handles update manually via REST
     res.json(post);
   } catch (error) {
     console.error('Update post error:', error);
@@ -282,7 +348,7 @@ export async function deletePost(req: Request, res: Response): Promise<void> {
     res.json({ message: 'Post deleted' });
   } catch (error) {
     console.error('Delete post error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) });
   }
 }
 

@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPosts, createPost, togglePostLike, addComment, toggleSavePost } from '@/lib/api';
+import { socket } from '@/lib/socket';
+import { getPosts, createPost } from '@/lib/api';
 import { CATEGORIES } from '@/lib/constants';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
+import FeedPost from '@/components/FeedPost';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,6 +22,34 @@ import { motion } from 'framer-motion';
 export default function Discussions() {
   const { user, token } = useAuth();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handlePostLiked = ({ postId, userId, liked }: { postId: string, userId: string, liked: boolean }) => {
+      queryClient.setQueryData(['posts'], (old: any) => {
+        if (!old) return old;
+        return old.map((p: any) => {
+          if (p.id !== postId) return p;
+          const newLikes = liked ? [...p.likes, userId] : p.likes.filter((id: string) => id !== userId);
+          return { ...p, likes: newLikes };
+        });
+      });
+    };
+
+    const handlePostCommented = (comment: any) => {
+      queryClient.setQueryData(['posts'], (old: any) => {
+        if (!old) return old;
+        return old.map((p: any) => p.id === comment.postId ? { ...p, comments: [...p.comments, comment] } : p);
+      });
+    };
+
+    socket.on('post:liked', handlePostLiked);
+    socket.on('post:commented', handlePostCommented);
+
+    return () => {
+      socket.off('post:liked', handlePostLiked);
+      socket.off('post:commented', handlePostCommented);
+    };
+  }, [queryClient]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [authorFilter, setAuthorFilter] = useState('');
@@ -66,33 +96,6 @@ export default function Discussions() {
         setNewPostData({ title: '', description: '', category: '' });
         setDialogOpen(false);
         toast.success('Post created!');
-      }
-    });
-  };
-
-  const handleLike = (postId: string) => {
-    if (!token) { toast.error('Logged in user required'); return; }
-    likeMutation.mutate(postId);
-  };
-
-  const handleSave = (postId: string) => {
-    if (!token) { toast.error('Logged in user required'); return; }
-    saveMutation.mutate(postId, {
-      onSuccess: (data) => {
-        toast.success(data.saved ? 'Post saved to bookmarks!' : 'Post removed from bookmarks');
-      }
-    });
-  };
-
-  const handleComment = (postId: string) => {
-    const text = commentText[postId]?.trim();
-    if (!token) { toast.error('Log in to join the discussion'); return; }
-    if (!text) return;
-    
-    commentMutation.mutate({ postId, text }, {
-      onSuccess: () => {
-        setCommentText(prev => ({ ...prev, [postId]: '' }));
-        toast.success('Comment added!');
       }
     });
   };
@@ -225,67 +228,9 @@ export default function Discussions() {
                 key={post.id} 
                 initial={{ opacity: 0, y: 20 }} 
                 animate={{ opacity: 1, y: 0 }} 
-                transition={{ delay: i * 0.05 }} 
-                className="discussion-card rich-card group"
+                transition={{ delay: i * 0.05 }}
               >
-                <div className="flex items-start justify-between mb-6">
-                  <span className="tag-dark border-0">{post.category}</span>
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{new Date(post.createdAt).toLocaleDateString()}</span>
-                </div>
-                <h3 className="font-display text-2xl font-bold mb-4 group-hover:text-[#7A9E7E] transition-colors">{post.title}</h3>
-                <p className="text-[#2C2C2C] leading-relaxed mb-8 text-[15px]">{post.description}</p>
-              <div className="flex items-center justify-between border-t border-[#8C4A2A]/20 pt-6 flex-wrap gap-4">
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-[#C8DBC9] flex items-center justify-center text-[#4F7153] font-black">{post.authorName.charAt(0)}</div>
-                      <div>
-                        <p className="text-sm font-bold text-foreground">{post.authorName}</p>
-                        <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">{post.authorRole || 'Member'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <button onClick={() => handleLike(post.id)} className={`flex items-center gap-2 font-bold text-sm transition-all hover:scale-110 ${user && post.likes.includes(user.id) ? 'text-[#4F7153]' : 'text-muted-foreground'}`}>
-                        <Heart className={`h-5 w-5 ${user && post.likes.includes(user.id) ? 'fill-[#4F7153]' : ''}`} />
-                        {post.likes.length}
-                      </button>
-                      <button onClick={() => handleSave(post.id)} className={`flex items-center gap-2 font-bold text-sm transition-all hover:scale-110 ${user && post.savedUsers?.includes(user.id) ? 'text-[#4F7153]' : 'text-muted-foreground'}`}>
-                        <Bookmark className={`h-5 w-5 ${user && post.savedUsers?.includes(user.id) ? 'fill-[#4F7153]' : ''}`} />
-                        {post.savedUsers?.length || 0}
-                      </button>
-                      <button 
-                        onClick={() => document.getElementById(`comment-input-${post.id}`)?.focus()}
-                        className="flex items-center gap-2 text-muted-foreground font-bold text-sm hover:text-[#4F7153] transition-colors"
-                      >
-                        <MessageCircle className="h-5 w-5" />
-                        {post.comments.length}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex-1 max-w-md ml-auto">
-                    <div className="flex gap-2">
-                      <Input
-                        id={`comment-input-${post.id}`}
-                        className="rounded-xl bg-[#F9F9F7] border-none focus:ring-4 focus:ring-[#7A9E7E]/30"
-                        placeholder="Add your perspective..."
-                        value={commentText[post.id] || ''}
-                        onChange={e => setCommentText(prev => ({ ...prev, [post.id]: e.target.value }))}
-                        onKeyDown={e => e.key === 'Enter' && handleComment(post.id)}
-                      />
-                      <Button variant="ghost" className="font-bold text-[#4F7153] hover:bg-[#7A9E7E]/10" onClick={() => handleComment(post.id)}>Post</Button>
-                    </div>
-                  </div>
-                </div>
-                {post.comments.length > 0 && (
-                  <div className="mt-8 space-y-4 pl-6 border-l-2 border-[#C8DBC9]">
-                    {post.comments.slice(0, 3).map(c => (
-                      <div key={c.id} className="text-sm">
-                        <span className="font-bold text-foreground mr-2">{c.userName}</span>
-                        <span className="text-muted-foreground">{c.commentText}</span>
-                      </div>
-                    ))}
-                    {post.comments.length > 3 && <p className="text-xs font-bold text-[#4F7153] cursor-pointer hover:underline pt-2">View all {post.comments.length} comments</p>}
-                  </div>
-                )}
+                <FeedPost post={post} />
               </motion.div>
             ))}
             {!isLoading && filtered.length === 0 && (
