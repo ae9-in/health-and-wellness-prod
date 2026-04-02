@@ -84,7 +84,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api', aiRoutes);
 
 // Global error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

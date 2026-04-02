@@ -390,7 +390,7 @@ export async function generateAIPlan(payload: {
   activityLevel: string;
   focusArea: string;
 }) {
-  return request<{ result: string }>('/ai/generate-ai-plan', {
+  return request<{ result: string }>('/generate-ai-plan', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -400,7 +400,7 @@ export async function followUpQuestion(payload: {
   question: string;
   previousContext: Array<{ role: 'user' | 'assistant'; content: string }>;
 }) {
-  return request<{ result: string }>('/ai/follow-up', {
+  return request<{ result: string }>('/follow-up', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
