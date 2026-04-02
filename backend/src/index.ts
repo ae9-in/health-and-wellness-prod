@@ -2,6 +2,8 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
+dotenv.config();
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import authRoutes from './routes/authRoutes';
@@ -16,8 +18,7 @@ import adminRoutes from './routes/adminRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import productRoutes from './routes/productRoutes';
 import settingRoutes from './routes/settingRoutes';
-
-dotenv.config();
+import aiRoutes from './routes/aiRoutes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -83,6 +84,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Global error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

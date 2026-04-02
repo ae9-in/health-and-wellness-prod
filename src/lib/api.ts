@@ -380,3 +380,28 @@ export async function updateGlobalSetting(token: string, key: string, value: str
 export async function getPublicSettings() {
   return request<Record<string, string>>('/settings', { method: 'GET' });
 }
+
+// AI Health Assistant API
+export async function generateAIPlan(payload: {
+  goal: string;
+  ageGroup: string;
+  gender: string;
+  dietPreference: string;
+  activityLevel: string;
+  focusArea: string;
+}) {
+  return request<{ result: string }>('/ai/generate-ai-plan', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function followUpQuestion(payload: {
+  question: string;
+  previousContext: Array<{ role: 'user' | 'assistant'; content: string }>;
+}) {
+  return request<{ result: string }>('/ai/follow-up', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}

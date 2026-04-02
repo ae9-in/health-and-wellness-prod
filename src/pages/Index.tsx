@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { getPosts, getSessions, getProducts, getPublicSettings } from '@/lib/api';
 import { resolveImageUrl } from '@/lib/utils';
+import AIHealthAssistant from '@/components/AIHealthAssistant/AIHealthAssistant';
 
 
 
@@ -308,6 +309,8 @@ const productFilters = ['Category', 'Price', 'Brand', 'Popular products'];
           </div>
         </div>
       </section>
+
+      <AIHealthAssistant />
 
       {/* Features grid */}
       <motion.section
