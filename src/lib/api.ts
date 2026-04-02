@@ -23,7 +23,15 @@ async function request<T>(path: string, options: RequestInit = {}, token?: strin
     throw new Error('Unable to reach the API server. Please verify the backend is running and accessible.');
   }
   const text = await res.text();
-  const data = text ? JSON.parse(text) : {};
+  let data: any = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (e) {
+    if (!res.ok) {
+      throw new Error(`Server returned an error (${res.status}): ${res.statusText}. Please ensure the backend is correctly deployed.`);
+    }
+    throw new Error('Received an invalid response from the server. This may be a deployment issue.');
+  }
   if (!res.ok) {
     const message = data?.error || data?.message || res.statusText;
     throw new Error(message);
