@@ -71,28 +71,8 @@ app.use((req: any, _res, next) => {
   next();
 });
 
-// Health check
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/sessions', sessionRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/partnerships', partnershipRoutes);
-app.use('/api/affiliates', affiliateRoutes);
-app.use('/api/brands', brandRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/settings', settingRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api', aiRoutes);
-
-// Direct AI routes for better production reliability
-app.post('/api/generate-ai-plan', async (req, res) => {
+// --- AI ROUTES (TOP OF STACK FOR RELIABILITY) ---
+const handleGenerateAI = async (req: any, res: any) => {
   try {
     const { goal, ageGroup, gender, dietPreference, activityLevel, focusArea } = req.body;
     const systemPrompt = "You are a professional AI health assistant. Provide structured, practical, and safe health advice including diet plans, workout routines, mental wellness tips, and product suggestions.";
@@ -109,9 +89,9 @@ app.post('/api/generate-ai-plan', async (req, res) => {
     console.error('Groq AI Error:', error);
     res.status(500).json({ error: error.message || 'Failed to generate AI plan.' });
   }
-});
+};
 
-app.post('/api/follow-up', async (req, res) => {
+const handleFollowUp = async (req: any, res: any) => {
   try {
     const { question, previousContext } = req.body;
     const systemPrompt = "You are a certified AI Health Assistant. Answer user follow-up questions safely and practically.";
@@ -130,7 +110,36 @@ app.post('/api/follow-up', async (req, res) => {
     console.error('Groq AI Error:', error);
     res.status(500).json({ error: error.message || 'Failed to generate follow-up.' });
   }
-});
+};
+
+// Health Check
+app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+app.get('/api/ai-ping', (_req, res) => res.json({ status: 'ok', message: 'AI Routes are active' }));
+
+// NEW PATHS
+app.post('/api/generate-ai-plan', handleGenerateAI);
+app.post('/api/follow-up', handleFollowUp);
+
+// LEGACY PATHS (FOR COMPATIBILITY)
+app.post('/api/ai/generate-ai-plan', handleGenerateAI);
+app.post('/api/ai/follow-up', handleFollowUp);
+
+// --- OTHER ROUTES ---
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/partnerships', partnershipRoutes);
+app.use('/api/affiliates', affiliateRoutes);
+app.use('/api/brands', brandRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/settings', settingRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api', aiRoutes);
+
+
 
 // Global error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
