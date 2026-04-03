@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '@/lib/auth';
 import { AnimatePresence, motion } from 'framer-motion';
 import AIHero from './AIHero';
 import AIQuestionnaire from './AIQuestionnaire';
@@ -11,6 +12,8 @@ const AIHealthAssistant: React.FC = () => {
   const [view, setView] = useState<'hero' | 'questionnaire' | 'loading' | 'result'>('hero');
   const [plan, setPlan] = useState<string | null>(null);
 
+  const { token } = useAuth();
+
   const handleStart = () => setView('questionnaire');
   
   const handleClose = () => setView('hero');
@@ -18,7 +21,7 @@ const AIHealthAssistant: React.FC = () => {
   const handleSubmit = async (answers: any) => {
     setView('loading');
     try {
-      const response = await generateAIPlan(answers);
+      const response = await generateAIPlan(answers, token || undefined);
       setPlan(response.result);
       setView('result');
     } catch (error: any) {

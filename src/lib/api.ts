@@ -397,19 +397,19 @@ export async function generateAIPlan(payload: {
   dietPreference: string;
   activityLevel: string;
   focusArea: string;
-}) {
+}, token?: string) {
   return request<{ result: string }>('/generate-ai-plan', {
     method: 'POST',
     body: JSON.stringify(payload),
-  });
+  }, token);
 }
 
 export async function followUpQuestion(payload: {
   question: string;
   previousContext: Array<{ role: 'user' | 'assistant'; content: string }>;
-}) {
+}, token?: string) {
   return request<{ result: string }>('/follow-up', {
     method: 'POST',
     body: JSON.stringify(payload),
-  });
+  }, token);
 }

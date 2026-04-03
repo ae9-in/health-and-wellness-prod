@@ -29,7 +29,21 @@ const FloatingBubble = ({ text, delay, x, y }: { text: string; delay: number; x:
   </motion.div>
 );
 
+import { useAuth } from '@/lib/auth';
+import { useNavigate } from 'react-router-dom';
+
 const AIHero: React.FC<AIHeroProps> = ({ onStart }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleButtonClick = () => {
+    if (user) {
+      onStart();
+    } else {
+      navigate('/login');
+    }
+  };
+
   const suggestions = [
     { text: "How to improve my sleep?", delay: 0, x: "15%", y: "20%" },
     { text: "High protein breakfast ideas", delay: 1, x: "75%", y: "15%" },
@@ -64,7 +78,9 @@ const AIHero: React.FC<AIHeroProps> = ({ onStart }) => {
           </h1>
 
           <p className="text-lg text-slate-600 max-w-xl mx-auto leading-relaxed">
-            Get personalized nutrition, fitness, and lifestyle advice tailored to your goals and preferences in seconds.
+            {user 
+              ? "Get personalized nutrition, fitness, and lifestyle advice tailored to your goals and preferences in seconds."
+              : "Login to get personalized nutrition, fitness, and lifestyle advice tailored to your goals and preferences."}
           </p>
 
           <motion.div
@@ -73,11 +89,11 @@ const AIHero: React.FC<AIHeroProps> = ({ onStart }) => {
             className="inline-block"
           >
             <Button
-              onClick={onStart}
+              onClick={handleButtonClick}
               size="lg"
               className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-10 py-7 text-lg font-bold shadow-lg shadow-emerald-200 transition-all group"
             >
-              Get Personalized Advice
+              {user ? "Get Personalized Advice" : "Login to Access AI Assistant"}
               <motion.span
                 className="inline-block ml-2"
                 animate={{ x: [0, 5, 0] }}

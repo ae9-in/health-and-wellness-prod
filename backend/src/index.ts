@@ -75,13 +75,16 @@ app.use((req: any, _res, next) => {
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 app.get('/api/ai-ping', (_req, res) => res.json({ status: 'ok', message: 'AI Routes are active' }));
 
-// AI PATHS (Pointing to consolidated controller)
-app.post('/api/generate-ai-plan', handleGenerateAI);
-app.post('/api/follow-up', handleFollowUp);
+import { authenticate, authorizeRoles } from './middlewares/authMiddleware';
+import { Role } from '@prisma/client';
 
-// LEGACY PATHS (FOR COMPATIBILITY)
-app.post('/api/ai/generate-ai-plan', handleGenerateAI);
-app.post('/api/ai/follow-up', handleFollowUp);
+// AI PATHS (Protected)
+app.post('/api/generate-ai-plan', authenticate, authorizeRoles(Role.USER, Role.AFFILIATE, Role.BRAND, Role.ADMIN, Role.EXPERT), handleGenerateAI);
+app.post('/api/follow-up', authenticate, authorizeRoles(Role.USER, Role.AFFILIATE, Role.BRAND, Role.ADMIN, Role.EXPERT), handleFollowUp);
+
+// LEGACY PATHS (Protected for consistency)
+app.post('/api/ai/generate-ai-plan', authenticate, authorizeRoles(Role.USER, Role.AFFILIATE, Role.BRAND, Role.ADMIN, Role.EXPERT), handleGenerateAI);
+app.post('/api/ai/follow-up', authenticate, authorizeRoles(Role.USER, Role.AFFILIATE, Role.BRAND, Role.ADMIN, Role.EXPERT), handleFollowUp);
 
 // --- OTHER ROUTES ---
 app.use('/api/auth', authRoutes);

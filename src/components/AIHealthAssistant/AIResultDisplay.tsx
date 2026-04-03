@@ -17,6 +17,7 @@ import {
   Pill
 } from 'lucide-react';
 import { followUpQuestion } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import MarkdownRenderer from './MarkdownRenderer';
 
 interface AIResultDisplayProps {
@@ -82,6 +83,7 @@ const TypingIndicator = () => (
 );
 
 const AIResultDisplay: React.FC<AIResultDisplayProps> = ({ plan, onStartOver }) => {
+  const { token } = useAuth();
   const [parsedPlan, setParsedPlan] = useState<CategoryPlan[]>([]);
   const [followUp, setFollowUp] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
@@ -120,7 +122,7 @@ const AIResultDisplay: React.FC<AIResultDisplayProps> = ({ plan, onStartOver }) 
       const response = await followUpQuestion({
         question: currentQuestion,
         previousContext: [{ role: 'assistant', content: plan }, ...chatHistory]
-      });
+      }, token || undefined);
       setChatHistory([...newHistory, { role: 'assistant', content: response.result }]);
     } catch (error) {
       console.error(error);
