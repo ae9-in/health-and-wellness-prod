@@ -13,7 +13,29 @@ export const generateAIPlan = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'All questionnaire fields are required.' });
     }
 
-    const systemPrompt = "You are a professional AI health assistant. Provide structured, practical, and safe health advice including diet plans, workout routines, mental wellness tips, and product suggestions.";
+    const systemPrompt = `You are a professional AI health assistant for Wellspring, a health and wellness platform.
+    Your task is to provide structured, practical, and safe health advice.
+    
+    RESPONSE FORMAT:
+    You must respond ONLY with a JSON array of objects. Each object represents a health category.
+    Format: [{"category": "Category Name", "content": "Markdown formatted content"}]
+    
+    AVAILABLE CATEGORIES (Use ONLY the relevant ones from this list):
+    🥗 Nutrition & Diet
+    💪 Fitness & Workout
+    🧘 Mental Wellness
+    🧘‍♀️ Yoga & Breathing
+    🌿 Ayurveda
+    🌱 Herbal Products
+    💊 Supplements
+    
+    RULES:
+    1. Detect which categories are relevant to the user's question and goals.
+    2. Respond ONLY for the relevant categories.
+    3. The "content" field should use Markdown (**bold**, lists, ### headings, etc.).
+    4. Do not include any text outside the JSON array.
+    5. Ensure the JSON is valid.
+    6. Incorporate the user's details into the content naturally.`;
 
     const userPrompt = `User Details:
 Goal: ${goal}
@@ -23,15 +45,7 @@ Diet: ${dietPreference}
 Activity Level: ${activityLevel}
 Focus: ${focusArea}
 
-Generate:
-- Diet Plan
-- Workout Plan
-- Mental Wellness Tips
-- Supplements / Herbal Suggestions
-- Product Recommendations
-- Daily Tips
-
-Keep output structured and easy to read.`;
+Generate a personalized health plan focusing on the relevant categories from the list provided.`;
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [
@@ -45,11 +59,26 @@ Keep output structured and easy to read.`;
         },
       ],
       model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-      max_tokens: 2048,
+      temperature: 0.6, // Slightly lower temperature for more consistent JSON
+      max_tokens: 3000,
+      response_format: { type: "json_object" } // Experimental but helps orient the model
     });
 
-    const aiResponse = chatCompletion.choices[0]?.message?.content || '';
+    let aiResponse = chatCompletion.choices[0]?.message?.content || '[]';
+    
+    // Safety check: if the model returned a wrapper object like { "plan": [...] } or { "response": [...] }, extract the array
+    try {
+      const parsed = JSON.parse(aiResponse);
+      if (!Array.isArray(parsed) && typeof parsed === 'object') {
+        const values = Object.values(parsed);
+        const arrayFound = values.find(val => Array.isArray(val));
+        if (arrayFound) {
+          aiResponse = JSON.stringify(arrayFound);
+        }
+      }
+    } catch (e) {
+      console.error("JSON Parse Error in AI response:", e);
+    }
 
     res.status(200).json({ result: aiResponse });
   } catch (error: any) {
@@ -66,8 +95,10 @@ export const followUpQuestion = async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Question is required.' });
       }
   
-      const systemPrompt = `You are a certified AI Health Assistant. Answer the user's follow-up question based on their previous health plan context. 
-      Keep it practical, safe, and include Indian context where relevant. Do NOT give medical diagnosis.`;
+      const systemPrompt = `You are a certified AI Health Assistant for Wellspring. Answer the user's follow-up question based on their previous health plan context. 
+      Keep it practical, safe, and include Indian context where relevant. 
+      Use proper Markdown for formatting (bold, lists, etc.). Do NOT display raw markdown symbols like **.
+      Do NOT give medical diagnosis.`;
   
       const chatCompletion = await groq.chat.completions.create({
         messages: [

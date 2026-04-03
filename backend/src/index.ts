@@ -19,6 +19,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import productRoutes from './routes/productRoutes';
 import settingRoutes from './routes/settingRoutes';
 import aiRoutes from './routes/aiRoutes';
+import { generateAIPlan as handleGenerateAI, followUpQuestion as handleFollowUp } from './controllers/aiController';
 import Groq from 'groq-sdk';
 
 const groq = new Groq({
@@ -70,53 +71,11 @@ app.use((req: any, _res, next) => {
   req.io = io;
   next();
 });
-
-// --- AI ROUTES (TOP OF STACK FOR RELIABILITY) ---
-const handleGenerateAI = async (req: any, res: any) => {
-  try {
-    const { goal, ageGroup, gender, dietPreference, activityLevel, focusArea } = req.body;
-    const systemPrompt = "You are a professional AI health assistant. Provide structured, practical, and safe health advice including diet plans, workout routines, mental wellness tips, and product suggestions.";
-    const userPrompt = `User Details:\nGoal: ${goal}\nAge: ${ageGroup}\nGender: ${gender}\nDiet: ${dietPreference}\nActivity Level: ${activityLevel}\nFocus: ${focusArea}\n\nGenerate:\n- Diet Plan\n- Workout Plan\n- Mental Wellness Tips\n- Supplements / Herbal Suggestions\n- Product Recommendations\n- Daily Tips\n\nKeep output structured and easy to read.`;
-
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-      max_tokens: 2048,
-    });
-    res.json({ result: chatCompletion.choices[0]?.message?.content || '' });
-  } catch (error: any) {
-    console.error('Groq AI Error:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate AI plan.' });
-  }
-};
-
-const handleFollowUp = async (req: any, res: any) => {
-  try {
-    const { question, previousContext } = req.body;
-    const systemPrompt = "You are a certified AI Health Assistant. Answer user follow-up questions safely and practically.";
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...((previousContext || []).map((msg: any) => ({ role: msg.role, content: msg.content }))),
-        { role: 'user', content: question },
-      ],
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-      max_tokens: 1024,
-    });
-    res.json({ result: chatCompletion.choices[0]?.message?.content || '' });
-  } catch (error: any) {
-    console.error('Groq AI Error:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate follow-up.' });
-  }
-};
-
 // Health Check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 app.get('/api/ai-ping', (_req, res) => res.json({ status: 'ok', message: 'AI Routes are active' }));
 
-// NEW PATHS
+// AI PATHS (Pointing to consolidated controller)
 app.post('/api/generate-ai-plan', handleGenerateAI);
 app.post('/api/follow-up', handleFollowUp);
 
