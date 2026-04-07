@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Post } from '@/lib/types';
 import { togglePostLike, toggleSavePost, addComment, deleteComment, reportComment, API_BASE as API_URL } from '@/lib/api';
+import { BLOCKLIST_WORDS } from '@/lib/blocklist';
 import { resolveImageUrl } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { 
@@ -81,8 +82,8 @@ export default function FeedPost({ post, onSelect, initialShowComments, pageSour
     toast.success('Share link ready! Copied to clipboard.');
   };
 
-  // Expanded client-side blocklist matching the server
-  const BLOCKLIST_REGEX = /fuck|shit|bitch|asshole|bastard|cunt|dick|pussy|mc|bc|bkl|lodu|chutiya|madarchod|behenchod|randi|harami|gaandu|bhosdi|lavde|saala|kutte|sule|maga|haramkhor/i;
+  // Build the blocklist regex on the fly (case insensitive, full array of ~2000 words)
+  const BLOCKLIST_REGEX = useMemo(() => new RegExp(BLOCKLIST_WORDS.join('|'), 'i'), []);
 
   const handleComment = async () => {
     if (!user || !token) { toast.error('Please log in to comment'); return; }

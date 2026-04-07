@@ -1,15 +1,5 @@
 import prisma from '../lib/prisma';
-
-// ─── Comprehensive blocklist (English, Romanized Hindi, Romanized Kannada) ───
-const BLOCKLIST_WORDS = [
-  // English
-  'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'cunt', 'dick', 'pussy',
-  // Romanized Hindi
-  'mc', 'bc', 'bkl', 'lodu', 'chutiya', 'madarchod',
-  'behenchod', 'randi', 'harami', 'gaandu', 'bhosdi', 'lavde', 'saala', 'kutte',
-  // Kannada romanized
-  'sule', 'maga', 'haramkhor',
-];
+import { BLOCKLIST_WORDS } from './blocklist';
 
 // Build a single regex with alternation — case-insensitive, partial match
 const BLOCKLIST_REGEX = new RegExp(BLOCKLIST_WORDS.join('|'), 'i');
