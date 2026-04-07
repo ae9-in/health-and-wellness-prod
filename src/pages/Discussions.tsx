@@ -3,7 +3,7 @@ import { useAuth } from '@/lib/auth';
 import { Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { socket } from '@/lib/socket';
-import { getPosts, createPost } from '@/lib/api';
+import { getPosts, createPost, togglePostLike, toggleSavePost, addComment } from '@/lib/api';
 import { CATEGORIES } from '@/lib/constants';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -230,7 +230,7 @@ export default function Discussions() {
                 animate={{ opacity: 1, y: 0 }} 
                 transition={{ delay: i * 0.05 }}
               >
-                <FeedPost post={post} />
+                <FeedPost post={post} pageSource="discussion" />
               </motion.div>
             ))}
             {!isLoading && filtered.length === 0 && (

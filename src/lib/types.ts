@@ -74,6 +74,7 @@ export interface Post {
     userName: string;
     commentText: string;
     createdAt: string;
+    status?: string;
   }[];
   savedUsers: string[]; // List of user IDs who saved
   isLiked?: boolean;

@@ -227,13 +227,28 @@ model SavedPost {
 }
 
 model Comment {
-  id          String   @id @default(uuid()) @db.Uuid
-  commentText String
-  postId      String   @db.Uuid
-  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  userId      String   @db.Uuid
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id             String          @id @default(uuid()) @db.Uuid
+  commentText    String
+  postId         String          @db.Uuid
+  post           Post            @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId         String          @db.Uuid
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime        @default(now())
+  status         String          @default("published") // published | hidden | rejected
+  toxicityScore  Float?
+  flagged        Boolean         @default(false)
+  reportCount    Int             @default(0)
+  reports        CommentReport[]
+}
+
+model CommentReport {
+  id        String   @id @default(uuid()) @db.Uuid
+  commentId String   @db.Uuid
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
 }
 
 model Like {

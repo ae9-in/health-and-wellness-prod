@@ -1,44 +1,57 @@
 import { useState, useEffect } from 'react';
 import { Post } from '@/lib/types';
-import { togglePostLike, toggleSavePost, addComment, API_BASE as API_URL } from '@/lib/api';
+import { togglePostLike, toggleSavePost, addComment, deleteComment, reportComment, API_BASE as API_URL } from '@/lib/api';
 import { resolveImageUrl } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { 
   Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, 
   Play, Check, Heart as HeartFilled, ShoppingCart, 
   ExternalLink, ArrowRight, ShieldCheck, Crown, Star, 
-  Zap, Trophy, Sparkles, BookOpen, Quote, Video, FileText, Trash2
+  Zap, Trophy, Sparkles, BookOpen, Quote, Video, FileText, Trash2, Flag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
-
-
 interface FeedPostProps {
   post: Post;
   onSelect?: (post: Post) => void;
   initialShowComments?: boolean;
+  pageSource?: 'feed' | 'discussion';
 }
 
-export default function FeedPost({ post, onSelect, initialShowComments }: FeedPostProps) {
+export default function FeedPost({ post, onSelect, initialShowComments, pageSource = 'feed' }: FeedPostProps) {
   const { user, token } = useAuth();
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!token) return;
+    try {
+      await deleteComment(token, post.id, commentId);
+      toast.success('Comment removed');
+      setLocalComments(prev => prev.filter(c => c.id !== commentId));
+    } catch {
+      toast.error('Failed to delete comment');
+    }
+  };
+
   const [isLiked, setIsLiked] = useState(user ? post.likes.includes(user.id) : false);
   const [likesCount, setLikesCount] = useState(post.likes.length);
   const [isSaved, setIsSaved] = useState(user ? (post as any).savedUsers?.includes(user.id) : false);
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'error' | 'success' | 'warning', message: string } | null>(null);
+  const [localComments, setLocalComments] = useState(post.comments);
+  const [reportedComments, setReportedComments] = useState<Set<string>>(new Set());
   
   // Sync state when post prop changes (e.g. from a parent re-fetch)
   useEffect(() => {
     setIsLiked(user ? post.likes.includes(user.id) : false);
     setLikesCount(post.likes.length);
     setIsSaved(user ? (post as any).savedUsers?.includes(user.id) : false);
+    setLocalComments(post.comments);
   }, [post, user]);
-  
-  
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     // Hide broken images instead of swapping in a dummy photo
@@ -68,16 +81,75 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
     toast.success('Share link ready! Copied to clipboard.');
   };
 
+  // Expanded client-side blocklist matching the server
+  const BLOCKLIST_REGEX = /fuck|shit|bitch|asshole|bastard|cunt|dick|pussy|mc|bc|bkl|lodu|chutiya|madarchod|behenchod|randi|harami|gaandu|bhosdi|lavde|saala|kutte|sule|maga|haramkhor/i;
+
   const handleComment = async () => {
     if (!user || !token) { toast.error('Please log in to comment'); return; }
-    if (!newComment.trim()) return;
+    const trimmedComment = newComment.trim();
+    if (!trimmedComment) return;
+
+    // Client-side blocklist check — instant rejection before API call
+    if (BLOCKLIST_REGEX.test(trimmedComment)) {
+      setFeedback({ 
+        type: 'error', 
+        message: 'Please keep the conversation respectful.' 
+      });
+      return;
+    }
+
     setIsSubmitting(true);
+    setFeedback(null);
+
     try {
-      await addComment(token, post.id, newComment);
+      const comment = await addComment(token, post.id, trimmedComment, pageSource);
+      setLocalComments(prev => {
+        if (prev.some(c => c.id === comment.id)) return prev;
+        return [...prev, comment];
+      });
       setNewComment('');
-      toast.success('Your insight has been shared!');
-    } catch { toast.error('Failed to add comment'); }
-    finally { setIsSubmitting(false); }
+      setFeedback({ type: 'success', message: 'Comment shared successfully!' });
+      setTimeout(() => setFeedback(null), 2500);
+    } catch (error: any) {
+      const msg = error.message || '';
+      if (msg.includes('respectful') || msg.includes('inappropriate')) {
+        setFeedback({ 
+          type: 'error', 
+          message: 'Please keep the conversation respectful.' 
+        });
+      } else if (msg.includes('too fast') || msg.includes('slow down')) {
+        setFeedback({ 
+          type: 'warning', 
+          message: "You're commenting too fast. Please slow down." 
+        });
+      } else {
+        setFeedback({ 
+          type: 'warning', 
+          message: "We couldn't post your comment right now. Please try again shortly." 
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReport = async (commentId: string) => {
+    if (!user || !token) { toast.error('Please log in to report'); return; }
+    try {
+      await reportComment(token, post.id, commentId);
+      setReportedComments(prev => new Set(prev).add(commentId));
+      toast.success('Comment reported. Thank you for keeping the community safe.');
+    } catch (error: any) {
+      const msg = error.message || '';
+      if (msg.includes('already reported')) {
+        setReportedComments(prev => new Set(prev).add(commentId));
+        toast.info('You have already reported this comment');
+      } else if (msg.includes('own comment')) {
+        toast.error('You cannot report your own comment');
+      } else {
+        toast.error('Failed to report comment');
+      }
+    }
   };
 
   const getRoleBadge = (role: string) => {
@@ -321,7 +393,7 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
             className="px-8 pb-8 bg-slate-50/50 border-t border-slate-100/50 overflow-hidden"
           >
             <div className="pt-8 space-y-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
-              {post.comments.map(comment => (
+              {localComments.map(comment => (
                 <motion.div 
                   initial={{ opacity: 0, x: -10 }} 
                   animate={{ opacity: 1, x: 0 }}
@@ -332,17 +404,56 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
                     <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(comment.userName)}&background=random&color=fff`} className="w-full h-full object-cover" alt={comment.userName} />
                   </div>
                   <div className="flex-1">
-                    <div className="bg-white rounded-[1.5rem] px-5 py-4 border border-slate-100 shadow-sm relative group-hover/comment:border-primary/20 transition-all">
+                    <div className={`bg-white rounded-[1.5rem] px-5 py-4 border shadow-sm relative group-hover/comment:border-primary/20 transition-all ${
+                      comment.status === 'hidden' ? 'border-amber-200 bg-amber-50/50' : 'border-slate-100'
+                    }`}>
                       <div className="flex items-center justify-between mb-1">
-                        <p className="font-black text-[13px] text-[#1A2E05]">{comment.userName}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-black text-[13px] text-[#1A2E05]">{comment.userName}</p>
+                        </div>
                         <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">{new Date(comment.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                       </div>
-                      <p className="text-sm text-slate-600 leading-relaxed font-medium">{comment.commentText}</p>
+                      {comment.status === 'hidden' ? (
+                        <p className="text-sm text-amber-600 leading-relaxed font-medium italic">This comment is under review.</p>
+                      ) : (
+                        <p className="text-sm text-slate-600 leading-relaxed font-medium pr-16">{comment.commentText}</p>
+                      )}
+                      
+                      {/* Action buttons: delete + report */}
+                      <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
+                        {/* Report button — visible for other users' comments */}
+                        {user && user.id !== comment.userId && comment.status !== 'hidden' && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleReport(comment.id); }}
+                            disabled={reportedComments.has(comment.id)}
+                            className={`text-xs font-semibold px-2 py-1.5 rounded-lg border transition-all flex items-center gap-1 ${
+                              reportedComments.has(comment.id)
+                                ? 'bg-slate-50 text-slate-400 border-slate-100 cursor-default'
+                                : 'text-slate-400 hover:text-orange-600 bg-white hover:bg-orange-50 border-slate-100 shadow-sm'
+                            }`}
+                            title={reportedComments.has(comment.id) ? 'Already reported' : 'Report comment'}
+                          >
+                            <Flag className="h-3.5 w-3.5" />
+                            {reportedComments.has(comment.id) ? 'Reported ✓' : 'Report'}
+                          </button>
+                        )}
+
+                        {/* Delete button — visible for comment owner, post author, or admin */}
+                        {(user?.id === comment.userId || user?.id === post.authorId || user?.role === 'ADMIN' || user?.fullName === comment.userName) && (
+                          <button 
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="text-slate-400 hover:text-red-600 bg-white hover:bg-red-50 p-2 rounded-xl border border-slate-100 shadow-sm transition-all"
+                            title="Delete comment"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
               ))}
-              {post.comments.length === 0 && (
+              {localComments.length === 0 && (
                 <div className="text-center py-8">
                   <MessageCircle className="h-12 w-12 text-slate-100 mx-auto mb-3" />
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">No reflections yet. Share yours.</p>
@@ -350,25 +461,49 @@ export default function FeedPost({ post, onSelect, initialShowComments }: FeedPo
               )}
             </div>
             
-              <div className="mt-8 flex gap-3">
-                <div className="flex-1 relative">
-                  <Input 
-                    placeholder="Share your perspective..." 
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleComment()}
-                    onClick={(event) => event.stopPropagation()}
-                    className="rounded-2xl h-14 bg-white border-slate-100 focus-visible:ring-primary pl-6 pr-12 shadow-sm"
-                  />
-                  <motion.div 
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-primary"
-                    onClick={(event) => { event.stopPropagation(); handleComment(); }}
-                  >
-                    <Zap className="h-5 w-5 fill-primary" />
-                  </motion.div>
+              <div className="mt-8 flex flex-col gap-4">
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <textarea 
+                      placeholder="Write a comment..." 
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onClick={(event) => event.stopPropagation()}
+                      className="w-full rounded-2xl min-h-[100px] p-4 bg-white border-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm resize-none text-sm transition-all"
+                    />
+                  </div>
+                  <div className="flex flex-col justify-end">
+                    <Button 
+                      onClick={(event) => { event.stopPropagation(); handleComment(); }}
+                      disabled={isSubmitting || !newComment.trim()}
+                      className={`h-12 px-8 rounded-2xl font-bold bg-[#4F7153] hover:bg-[#3D5A41] text-white shadow-lg transition-all flex items-center justify-center min-w-[100px] ${isSubmitting ? 'opacity-80 cursor-not-allowed' : ''}`}
+                    >
+                      {isSubmitting ? (
+                        <div className="flex gap-1">
+                          <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} className="h-1.5 w-1.5 bg-white rounded-full" />
+                          <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="h-1.5 w-1.5 bg-white rounded-full" />
+                          <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="h-1.5 w-1.5 bg-white rounded-full" />
+                        </div>
+                      ) : (
+                        'Post'
+                      )}
+                    </Button>
+                  </div>
                 </div>
+
+                {feedback && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-3 rounded-xl text-xs font-semibold ${
+                      feedback.type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' :
+                      feedback.type === 'success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                      'bg-amber-50 text-amber-700 border border-amber-100'
+                    }`}
+                  >
+                    {feedback.message}
+                  </motion.div>
+                )}
               </div>
           </motion.div>
         )}

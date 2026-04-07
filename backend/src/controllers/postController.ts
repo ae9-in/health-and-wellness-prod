@@ -3,6 +3,8 @@ import prisma from '../lib/prisma';
 import { AuthRequest } from '../middlewares/authMiddleware';
 import { createNotification } from './notificationsController';
 import { uploadToCloudinary } from '../config/cloudinary';
+import { checkBlocklist, checkToxicityAsync } from '../utils/moderation';
+import { checkCommentRateLimit } from '../utils/rateLimit';
 
 // Get all posts with author info, likes count, and comments
 export async function getPosts(req: Request, res: Response): Promise<void> {
@@ -35,6 +37,7 @@ export async function getPosts(req: Request, res: Response): Promise<void> {
         likes: { select: { userId: true } },
         savedBy: { select: { userId: true } },
         comments: {
+          where: { status: 'published' },
           include: { user: { select: { id: true, fullName: true } } },
           orderBy: { createdAt: 'asc' },
         },
@@ -58,8 +61,9 @@ export async function getPosts(req: Request, res: Response): Promise<void> {
         postId: c.postId,
         userId: c.userId,
         userName: c.user?.fullName || 'Anonymous',
-        commentText: c.commentText,
+        commentText: c.status === 'hidden' ? 'This comment is under review.' : c.commentText,
         createdAt: c.createdAt.toISOString(),
+        status: c.status || 'published',
       })),
       images: p.images || [],
       videoUrl: p.videoUrl,
@@ -276,6 +280,44 @@ export async function toggleSave(req: AuthRequest, res: Response): Promise<void>
   }
 }
 
+// Delete a comment
+export async function deleteComment(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const commentId = req.params.commentId as string;
+    const userId = req.userId!;
+    const userRole = req.userRole;
+
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      include: { post: { select: { authorId: true } } }
+    });
+
+    if (!comment) {
+      res.status(404).json({ error: 'Comment not found' });
+      return;
+    }
+
+    // Authorization: Comment Owner, Post Author, or Admin
+    const isCommentOwner = comment.userId === userId;
+    const isPostAuthor = comment.post.authorId === userId;
+    const isAdmin = userRole === 'ADMIN';
+
+    if (!isCommentOwner && !isPostAuthor && !isAdmin) {
+      res.status(403).json({ error: 'You are not authorized to delete this comment' });
+      return;
+    }
+
+    await prisma.comment.delete({
+      where: { id: commentId }
+    });
+
+    res.status(200).json({ message: 'Comment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 // Delete a post
 export async function deletePost(req: AuthRequest, res: Response): Promise<void> {
   try {
@@ -324,8 +366,34 @@ export async function addComment(req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+    // 1) Rate limiting — max 5 comments/user/minute
+    const rateCheck = checkCommentRateLimit(userId);
+    if (!rateCheck.allowed) {
+      res.status(429).json({
+        error: "You're commenting too fast. Please slow down.",
+        retryAfterMs: rateCheck.retryAfterMs,
+      });
+      return;
+    }
+
+    // 2) Local blocklist — instant, synchronous
+    const blocklistResult = checkBlocklist(commentText);
+    if (!blocklistResult.safe) {
+      res.status(400).json({
+        error: blocklistResult.reason,
+        blocked: true,
+      });
+      return;
+    }
+
+    // 3) Save comment immediately (fail-open)
     const comment = await prisma.comment.create({
-      data: { commentText: commentText.trim(), postId, userId },
+      data: {
+        commentText: commentText.trim(),
+        postId,
+        userId,
+        status: 'published',
+      },
       include: { user: { select: { id: true, fullName: true } } },
     }) as any;
 
@@ -336,6 +404,7 @@ export async function addComment(req: AuthRequest, res: Response): Promise<void>
       userName: comment.user.fullName,
       commentText: comment.commentText,
       createdAt: comment.createdAt.toISOString(),
+      status: comment.status,
     };
 
     (req as any).io.emit('post:commented', responseData);
@@ -352,9 +421,70 @@ export async function addComment(req: AuthRequest, res: Response): Promise<void>
       );
     }
 
+    // 4) HuggingFace async toxicity check — fire and forget
+    checkToxicityAsync(comment.id, commentText.trim()).catch((err) =>
+      console.warn('[Moderation] Background toxicity check failed:', err.message)
+    );
+
     res.status(201).json(responseData);
   } catch (error) {
     console.error('Add comment error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Report a comment
+export async function reportComment(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const commentId = req.params.commentId as string;
+    const userId = req.userId!;
+
+    // Check comment exists
+    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    if (!comment) {
+      res.status(404).json({ error: 'Comment not found' });
+      return;
+    }
+
+    // Can't report your own comment
+    if (comment.userId === userId) {
+      res.status(400).json({ error: 'You cannot report your own comment' });
+      return;
+    }
+
+    // Check for duplicate report (unique constraint)
+    const existing = await (prisma as any).commentReport.findUnique({
+      where: { commentId_userId: { commentId, userId } },
+    });
+    if (existing) {
+      res.status(409).json({ error: 'You have already reported this comment' });
+      return;
+    }
+
+    // Create report and increment reportCount atomically
+    await (prisma as any).commentReport.create({
+      data: { commentId, userId },
+    });
+
+    const updated = await prisma.comment.update({
+      where: { id: commentId },
+      data: { reportCount: { increment: 1 } },
+    });
+
+    // Auto-hide at 3 or more reports
+    if (updated.reportCount >= 3) {
+      await prisma.comment.update({
+        where: { id: commentId },
+        data: { status: 'hidden', flagged: true },
+      });
+
+      // Emit real-time event so UI can hide it
+      (req as any).io.emit('comment:hidden', { commentId });
+    }
+
+    res.json({ reported: true, reportCount: updated.reportCount });
+  } catch (error) {
+    console.error('Report comment error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 }

@@ -118,16 +118,40 @@ export async function togglePostLike(token: string, postId: string) {
   return request<{ liked: boolean }>(`/posts/${postId}/like`, { method: 'POST' }, token);
 }
 
-export async function addComment(token: string, postId: string, commentText: string) {
-  return request<{ id: string; commentText: string }>(
+export async function addComment(token: string, postId: string, commentText: string, page?: string) {
+  return request<{ 
+    id: string; 
+    postId: string; 
+    userId: string; 
+    userName: string; 
+    commentText: string; 
+    createdAt: string; 
+  }>(
     `/posts/${postId}/comments`,
     {
       method: 'POST',
-      body: JSON.stringify({ commentText }),
+      body: JSON.stringify({ commentText, page }),
     },
     token
   );
 }
+
+export async function deleteComment(token: string, postId: string, commentId: string) {
+  return request<{ message: string }>(
+    `/posts/${postId}/comments/${commentId}`,
+    { method: 'DELETE' },
+    token
+  );
+}
+
+export async function reportComment(token: string, postId: string, commentId: string) {
+  return request<{ reported: boolean; reportCount: number }>(
+    `/posts/${postId}/comments/${commentId}/report`,
+    { method: 'POST' },
+    token
+  );
+}
+
 
 export async function deletePost(token: string, postId: string) {
   return request<{ success: true }>(`/posts/${postId}`, { method: 'DELETE' }, token);

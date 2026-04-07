@@ -1,9 +1,5 @@
 import { Request, Response } from 'express';
-import Groq from 'groq-sdk';
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || 'MISSING_API_KEY',
-});
+import groq from '../lib/groq';
 
 export const generateAIPlan = async (req: Request, res: Response) => {
   try {

@@ -77,7 +77,12 @@ export default function CommunityFeed() {
     };
 
     const handlePostCommented = (comment: any) => {
-      setPosts(prev => prev.map(p => p.id === comment.postId ? { ...p, comments: [...p.comments, comment] } : p));
+      setPosts(prev => prev.map(p => {
+        if (p.id !== comment.postId) return p;
+        // Check for duplicates before adding
+        if (p.comments.some(c => c.id === comment.id)) return p;
+        return { ...p, comments: [...p.comments, comment] };
+      }));
     };
 
     socket.on('post:created', handlePostCreated);
@@ -179,7 +184,7 @@ export default function CommunityFeed() {
                           exit={{ opacity: 0, scale: 0.9 }}
                           transition={{ delay: (i % 6) * 0.1, duration: 0.8, type: 'spring', bounce: 0.4 }}
                         >
-                          <FeedPost post={post} onSelect={setSelectedPost} />
+                          <FeedPost post={post} onSelect={setSelectedPost} pageSource="feed" />
                         </motion.div>
                       ))}
                     </AnimatePresence>

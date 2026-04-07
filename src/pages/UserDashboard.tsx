@@ -1,14 +1,15 @@
 import { useAuth } from '@/lib/auth';
 import { Navigate, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
 import NotificationPanel from '@/components/NotificationPanel';
-import { getPosts, getSessions, getUserComments } from '@/lib/api';
+import { getPosts, getSessions, getUserComments, deleteComment } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Calendar, Check, ArrowRight, ShoppingCart } from 'lucide-react';
+import { MessageSquare, Calendar, Check, ArrowRight, ShoppingCart, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import type { Post, UserCommentActivity } from '@/lib/types';
 
 type DiscussionEntry = {
@@ -21,6 +22,7 @@ type DiscussionEntry = {
 
 export default function UserDashboard() {
   const { user, token } = useAuth();
+  const queryClient = useQueryClient();
   
   // Queries
   const { data: posts = [] } = useQuery<Post[]>({ 
@@ -36,6 +38,17 @@ export default function UserDashboard() {
     queryFn: () => getUserComments(token!),
     enabled: !!token,
   });
+
+  const handleDeleteComment = async (postId: string, commentId: string) => {
+    if (!token) return;
+    try {
+      await deleteComment(token, postId, commentId);
+      toast.success('Comment removed');
+      queryClient.invalidateQueries({ queryKey: ['user-comments'] });
+    } catch {
+      toast.error('Failed to delete comment');
+    }
+  };
 
   if (!user) return <Navigate to="/login" />;
   if (user.role !== 'USER' && user.role !== 'ADMIN') return null;
@@ -120,19 +133,34 @@ export default function UserDashboard() {
                 </h3>
                 <div className="space-y-4">
                   {recentDiscussions.map(entry => (
-                    <Link 
-                      key={`${entry.type}-${entry.id}`} 
-                      to={`/discussions`}
-                      className="block p-4 rounded-xl bg-muted/20 border border-border/40 hover:bg-white hover:shadow-md transition-all group"
-                    >
-                      <p className="font-bold text-sm mb-1 line-clamp-1 group-hover:text-primary transition-colors">{entry.title}</p>
-                      <p className="text-xs text-muted-foreground uppercase tracking-[0.3em] mb-2">
-                        {entry.type === 'comment' ? 'Commented' : 'Posted'} {new Date(entry.date).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm text-slate-600 line-clamp-2">
-                        {entry.snippet}
-                      </p>
-                    </Link>
+                    <div key={`${entry.type}-${entry.id}`} className="relative group">
+                      <Link 
+                        to={`/discussions`}
+                        className="block p-4 rounded-xl bg-muted/20 border border-border/40 hover:bg-white hover:shadow-md transition-all group/link"
+                      >
+                        <p className="font-bold text-sm mb-1 line-clamp-1 group-hover/link:text-primary transition-colors">{entry.title}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-[0.3em] mb-2">
+                          {entry.type === 'comment' ? 'Commented' : 'Posted'} {new Date(entry.date).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm text-slate-600 line-clamp-2">
+                          {entry.snippet}
+                        </p>
+                      </Link>
+                      {entry.type === 'comment' && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const comment = recentComments.find(c => c.id === entry.id);
+                            if (comment) handleDeleteComment(comment.postId, comment.id);
+                          }}
+                          className="absolute top-4 right-4 h-9 w-9 flex items-center justify-center text-slate-400 hover:text-red-600 bg-white hover:bg-red-50 rounded-xl transition-all shadow-md border border-border/40 z-10"
+                          title="Delete comment"
+                        >
+                          <Trash2 className="h-4.5 w-4.5" />
+                        </button>
+                      )}
+                    </div>
                   ))}
                   {recentDiscussions.length === 0 && (
                     <p className="text-sm text-muted-foreground italic py-4">
