@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import groq from '../lib/groq';
+import prisma from '../lib/prisma';
+import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const generateAIPlan = async (req: Request, res: Response) => {
   try {
@@ -139,3 +141,44 @@ export const followUpQuestion = async (req: Request, res: Response) => {
       res.status(500).json({ error: 'Failed to generate follow-up response.' });
     }
   };
+
+export async function saveAIPlan(req: AuthRequest, res: Response) {
+  try {
+    const { planData, metrics } = req.body;
+    const userId = req.userId;
+
+    if (!planData || !userId) {
+      return res.status(400).json({ error: 'Plan data and authentication required.' });
+    }
+
+    const savedPlan = await prisma.healthPlan.create({
+      data: {
+        userId,
+        planData,
+        metrics: metrics || undefined,
+      }
+    });
+
+    res.status(201).json(savedPlan);
+  } catch (error) {
+    console.error('Save AI Plan Error:', error);
+    res.status(500).json({ error: 'Failed to save health plan.' });
+  }
+}
+
+export async function getUserPlans(req: AuthRequest, res: Response) {
+  try {
+    const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const plans = await prisma.healthPlan.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json(plans);
+  } catch (error) {
+    console.error('Get User Plans Error:', error);
+    res.status(500).json({ error: 'Failed to fetch plan history.' });
+  }
+}

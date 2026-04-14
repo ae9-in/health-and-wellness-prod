@@ -257,18 +257,6 @@ export async function deleteAdminProduct(token: string, productId: string) {
   return request<{ message: string }>(`/admin/products/${productId}`, { method: 'DELETE' }, token);
 }
 
-export async function createSession(token: string, payload: Omit<Session, 'id' | 'registeredUsers'>) {
-  return request<Session>('/admin/sessions', { method: 'POST', body: JSON.stringify(payload) }, token);
-}
-
-export async function updateSession(token: string, id: string, payload: Partial<Omit<Session, 'id' | 'registeredUsers'>>) {
-  return request<Session>(`/admin/sessions/${id}`, { method: 'PUT', body: JSON.stringify(payload) }, token);
-}
-
-export async function deleteSession(token: string, id: string) {
-  return request<{ message: string }>(`/admin/sessions/${id}`, { method: 'DELETE' }, token);
-}
-
 export async function getProducts(filters: Record<string, string | number | boolean | undefined> = {}) {
   const query = new URLSearchParams();
   Object.keys(filters).forEach(key => {
@@ -437,5 +425,24 @@ export async function followUpQuestion(payload: {
   return request<{ result: string }>('/follow-up', {
     method: 'POST',
     body: JSON.stringify(payload),
+  }, token);
+}
+
+export async function saveAIPlan(payload: { planData: any, metrics: any }, token: string) {
+  return request<any>('/save-ai-plan', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  }, token);
+}
+
+export async function getAIPlanHistory(token: string) {
+  return request<any[]>('/history', { method: 'GET' }, token);
+}
+
+// User Profile Actions
+export async function updateAvatar(token: string, formData: FormData) {
+  return request<{ avatar: string }>(`/users/profile/avatar`, {
+    method: 'POST',
+    body: formData
   }, token);
 }

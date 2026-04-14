@@ -19,6 +19,7 @@ export async function getSessions(_req: Request, res: Response): Promise<void> {
       hostName: s.hostName,
       date: s.date.toISOString(),
       sessionLink: s.sessionLink,
+      image: s.image,
       registeredUsers: s.registrations.map((r: any) => r.userId),
     }));
 
@@ -29,18 +30,27 @@ export async function getSessions(_req: Request, res: Response): Promise<void> {
   }
 }
 
+import { uploadToCloudinary } from '../config/cloudinary';
+
 // Create a session (admin only)
 export async function createSession(req: Request, res: Response): Promise<void> {
   try {
     const { title, description, hostName, date, sessionLink } = req.body;
+    const file = req.file;
 
     if (!title || !description || !hostName || !date || !sessionLink) {
       res.status(400).json({ error: 'All fields are required' });
       return;
     }
 
+    let imageUrl = null;
+    if (file) {
+      const result = await uploadToCloudinary(file.buffer, 'sessions');
+      imageUrl = result.secure_url;
+    }
+
     const session = await prisma.session.create({
-      data: { title, description, hostName, date: new Date(date), sessionLink },
+      data: { title, description, hostName, date: new Date(date), sessionLink, image: imageUrl },
     });
 
     const responseData = {
@@ -50,6 +60,7 @@ export async function createSession(req: Request, res: Response): Promise<void> 
       hostName: session.hostName,
       date: session.date.toISOString(),
       sessionLink: session.sessionLink,
+      image: session.image,
       registeredUsers: [],
     };
 
@@ -92,6 +103,13 @@ export async function updateSession(req: Request, res: Response): Promise<void> 
   try {
     const sessionId = req.params.sessionId as string;
     const { title, description, hostName, date, sessionLink } = req.body;
+    const file = req.file;
+
+    let imageUrl = undefined;
+    if (file) {
+      const result = await uploadToCloudinary(file.buffer, 'sessions');
+      imageUrl = result.secure_url;
+    }
 
     const session = await prisma.session.update({
       where: { id: sessionId },
@@ -101,6 +119,7 @@ export async function updateSession(req: Request, res: Response): Promise<void> 
         ...(hostName && { hostName }),
         ...(date && { date: new Date(date) }),
         ...(sessionLink && { sessionLink }),
+        ...(imageUrl && { image: imageUrl }),
       },
     });
 
@@ -111,6 +130,7 @@ export async function updateSession(req: Request, res: Response): Promise<void> 
       hostName: session.hostName,
       date: session.date.toISOString(),
       sessionLink: session.sessionLink,
+      image: session.image,
     };
 
     (req as any).io.emit('session:updated', responseData);

@@ -45,6 +45,7 @@ export interface User {
   city?: string;
   age?: number;
   interests: string[];
+  avatar?: string;
   status?: ApprovalStatus;
   blocked: boolean;
   subscriptionStatus?: string;
@@ -100,6 +101,7 @@ export interface Session {
   hostName: string;
   date: string;
   sessionLink: string;
+  image?: string;
   registeredUsers: string[];
 }
 

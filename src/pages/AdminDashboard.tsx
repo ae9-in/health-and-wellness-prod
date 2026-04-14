@@ -271,6 +271,7 @@ export default function AdminDashboard() {
   const [sessionDialog, setSessionDialog] = useState(false);
   const [newSession, setNewSession] = useState({ title: '', description: '', hostName: '', date: '', sessionLink: '' });
   const [editSessionId, setEditSessionId] = useState<string | null>(null);
+  const [sessionImage, setSessionImage] = useState<File | null>(null);
 
   const createSessionMutation = useMutation({ mutationFn: (payload: Omit<Session, 'id' | 'registeredUsers'>) => createSession(token!, payload), ...mutationOptions });
   const updateSessionMutation = useMutation({ mutationFn: ({id, payload}: {id: string, payload: Partial<Omit<Session, 'id' | 'registeredUsers'>>}) => updateSession(token!, id, payload), ...mutationOptions });
@@ -316,15 +317,33 @@ export default function AdminDashboard() {
   };
 
   const handleCreateSession = () => {
-    createSessionMutation.mutate(newSession, {
-      onSuccess: () => { setSessionDialog(false); setNewSession({ title: '', description: '', hostName: '', date: '', sessionLink: '' }); toast.success('Session created'); }
+    const formData = new FormData();
+    Object.entries(newSession).forEach(([k, v]) => formData.append(k, v));
+    if (sessionImage) formData.append('image', sessionImage);
+
+    createSessionMutation.mutate(formData as any, {
+      onSuccess: () => { 
+        setSessionDialog(false); 
+        setNewSession({ title: '', description: '', hostName: '', date: '', sessionLink: '' }); 
+        setSessionImage(null);
+        toast.success('Session created'); 
+      }
     });
   };
 
   const handleUpdateSession = () => {
     if (!editSessionId) return;
-    updateSessionMutation.mutate({ id: editSessionId, payload: newSession }, {
-      onSuccess: () => { setEditSessionId(null); setSessionDialog(false); toast.success('Session updated'); }
+    const formData = new FormData();
+    Object.entries(newSession).forEach(([k, v]) => formData.append(k, v));
+    if (sessionImage) formData.append('image', sessionImage);
+
+    updateSessionMutation.mutate({ id: editSessionId, payload: formData as any }, {
+      onSuccess: () => { 
+        setEditSessionId(null); 
+        setSessionDialog(false); 
+        setSessionImage(null);
+        toast.success('Session updated'); 
+      }
     });
   };
 
@@ -1164,9 +1183,14 @@ export default function AdminDashboard() {
                             <Input type="datetime-local" className="rounded-xl h-12 bg-[#2C4A2E]/40 border border-[#4F7153]/40 text-[#F9F5EE] placeholder:text-[#F9F5EE]/80 focus-visible:ring-[#7A9E7E]/40" value={newSession.date} onChange={e => setNewSession({...newSession, date: e.target.value})} />
                           </div>
                         </div>
-                        <div className="grid gap-2">
-                          <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Meeting Link</Label>
-                          <Input className="rounded-xl h-12 bg-[#2C4A2E]/40 border border-[#4F7153]/40 text-[#F9F5EE] placeholder:text-[#F9F5EE]/80 focus-visible:ring-[#7A9E7E]/40" value={newSession.sessionLink} onChange={e => setNewSession({...newSession, sessionLink: e.target.value})} placeholder="https://zoom.us/..." />
+                          <div className="grid gap-2">
+                          <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Session Banner (Image)</Label>
+                          <Input 
+                            type="file" 
+                            accept="image/*"
+                            className="rounded-xl h-12 bg-[#2C4A2E]/40 border border-[#4F7153]/40 text-[#F9F5EE] file:text-[#F9F5EE] file:bg-primary/20 file:rounded-lg file:border-none" 
+                            onChange={e => setSessionImage(e.target.files?.[0] || null)}
+                          />
                         </div>
                         <Button className="rounded-xl h-12 font-black tracking-widest text-xs uppercase bg-primary mt-4" onClick={editSessionId ? handleUpdateSession : handleCreateSession}>
                           {editSessionId ? 'Update Session' : 'Publish Session'}
@@ -1178,11 +1202,23 @@ export default function AdminDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {sessions.map(session => (
-                    <div key={session.id} className="group bg-white rounded-[2.5rem] border border-border/50 p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="bg-primary/5 p-3 rounded-2xl">
-                          <Calendar className="h-6 w-6 text-primary" />
+                    <div key={session.id} className="group bg-white rounded-[2.5rem] border border-border/50 p-0 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
+                      {session.image ? (
+                        <div className="h-48 w-full relative overflow-hidden">
+                          <img src={session.image} alt={session.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                         </div>
+                      ) : (
+                        <div className="h-48 w-full bg-primary/5 flex items-center justify-center">
+                          <Calendar className="h-12 w-12 text-primary/20" />
+                        </div>
+                      )}
+                      
+                      <div className="p-8">
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="bg-primary/5 p-3 rounded-2xl">
+                            <Calendar className="h-6 w-6 text-primary" />
+                          </div>
                         <div className="flex gap-2">
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-primary" onClick={() => { setEditSessionId(session.id); setNewSession(session as any); setSessionDialog(true); }}>
                             <Edit className="h-4 w-4" />

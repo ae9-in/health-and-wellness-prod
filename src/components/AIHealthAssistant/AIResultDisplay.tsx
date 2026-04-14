@@ -21,7 +21,7 @@ import {
   CheckCircle2,
   Sparkles
 } from 'lucide-react';
-import { followUpQuestion } from '@/lib/api';
+import { followUpQuestion, saveAIPlan } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import MarkdownRenderer from './MarkdownRenderer';
 import { toast } from 'sonner';
@@ -42,6 +42,8 @@ const AIResultDisplay: React.FC<AIResultDisplayProps> = ({ plan, onStartOver, us
   const [parsedPlan, setParsedPlan] = useState<CategoryPlan[]>([]);
   const [excitementMessage, setExcitementMessage] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasSaved, setHasSaved] = useState(false);
 
   useEffect(() => {
     try {
@@ -166,6 +168,29 @@ const AIResultDisplay: React.FC<AIResultDisplayProps> = ({ plan, onStartOver, us
     }
   };
 
+  const handleSavePlan = async () => {
+    if (!token) {
+      toast.error("Please login to save your plan");
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      await saveAIPlan({
+        planData: parsedPlan,
+        metrics: userProfile // This contains age, weight, height
+      }, token);
+      
+      setHasSaved(true);
+      toast.success("Health plan saved to your profile!");
+    } catch (error) {
+      console.error("Save Plan Error:", error);
+      toast.error("Failed to save plan. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-32 space-y-12">
       {/* Friendly Excitement Message */}
@@ -205,8 +230,24 @@ const AIResultDisplay: React.FC<AIResultDisplayProps> = ({ plan, onStartOver, us
             className="rounded-full gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-10 h-16 text-lg font-black shadow-xl shadow-emerald-600/20 w-full sm:w-auto"
           >
             {isExporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Download className="w-6 h-6" />}
-            Download Your Plan (PDF)
+            Download (PDF)
           </Button>
+
+          <Button 
+            size="lg"
+            variant="outline"
+            onClick={handleSavePlan}
+            disabled={isSaving || hasSaved}
+            className={`rounded-full gap-3 border-2 px-10 h-16 text-lg font-bold w-full sm:w-auto transition-all ${
+              hasSaved 
+                ? 'border-emerald-600 text-emerald-600 bg-emerald-50 cursor-default hover:bg-emerald-50' 
+                : 'border-[#C8DBC9] text-[#4F7153] hover:bg-emerald-50'
+            }`}
+          >
+            {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : hasSaved ? <CheckCircle2 className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
+            {hasSaved ? 'History Saved' : 'Save to Profile'}
+          </Button>
+
           <Button 
             variant="ghost" 
             size="lg"

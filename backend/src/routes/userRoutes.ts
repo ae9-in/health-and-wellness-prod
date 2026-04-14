@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { authenticate } from '../middlewares/authMiddleware';
+import { authenticate, AuthRequest } from '../middlewares/authMiddleware';
 import prisma from '../lib/prisma';
-import { AuthRequest } from '../middlewares/authMiddleware';
+import { upload } from '../middlewares/uploadMiddleware';
+import { uploadToCloudinary } from '../config/cloudinary';
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.get('/profile', authenticate, async (req: AuthRequest, res) => {
         email: true,
         blocked: true,
         interests: true,
+        avatar: true,
         createdAt: true,
       },
     });
@@ -46,6 +48,7 @@ router.put('/profile', authenticate, async (req: AuthRequest, res) => {
         email: true,
         blocked: true,
         interests: true,
+        avatar: true,
         createdAt: true,
       },
     });
@@ -88,6 +91,33 @@ router.get('/comments', authenticate, async (req: AuthRequest, res) => {
     res.json(formatted);
   } catch (error) {
     console.error('Get user comments error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/profile/avatar', authenticate, upload.single('avatar'), async (req: AuthRequest, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      res.status(400).json({ error: 'No file uploaded' });
+      return;
+    }
+
+    const result = await uploadToCloudinary(file.buffer, 'avatars');
+    
+    const user = await prisma.user.update({
+      where: { id: req.userId },
+      data: { avatar: result.secure_url },
+      select: {
+        id: true,
+        fullName: true,
+        avatar: true,
+      }
+    });
+
+    res.json(user);
+  } catch (error) {
+    console.error('Avatar upload error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

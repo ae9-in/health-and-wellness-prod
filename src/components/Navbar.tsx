@@ -104,7 +104,7 @@ export default function Navbar() {
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2 p-1 pr-3 rounded-full bg-[#7A9E7E] border border-[#7A9E7E] hover:shadow-lg transition-all outline-none text-white">
                         <Avatar className="h-8 w-8 border border-white/40 bg-white/30">
-                        <AvatarImage src="" />
+                        <AvatarImage src={user.avatar || ""} />
                         <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-black">
                           {user.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
@@ -206,6 +206,7 @@ export default function Navbar() {
                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest pl-2">My Account</p>
                     <div className="p-4 bg-muted/30 rounded-3xl border border-border/40 flex items-center gap-3 mb-4">
                       <Avatar className="h-10 w-10">
+                        <AvatarImage src={user.avatar || ""} />
                         <AvatarFallback className="bg-primary text-primary-foreground font-black">
                           {user.fullName[0].toUpperCase()}
                         </AvatarFallback>

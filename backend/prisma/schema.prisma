@@ -47,6 +47,7 @@ model User {
   city      String?
   age       Int?
   interests String[] @default([])
+  avatar    String?  // Cloudinary URL for profile picture
 
   posts              Post[]
   comments           Comment[]
@@ -57,6 +58,7 @@ model User {
   savedPosts         SavedPost[]
   affiliate          Affiliate?
   brand              Brand?
+  healthPlans        HealthPlan[]
 }
 
 model Affiliate {
@@ -268,6 +270,7 @@ model Session {
   hostName      String
   date          DateTime
   sessionLink   String
+  image         String?  // Cloudinary URL for session banner
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -324,4 +327,13 @@ model GlobalSetting {
   key   String @id
   value String
   updatedAt DateTime @updatedAt
+}
+
+model HealthPlan {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planData  Json     // Stores the generated plan categories/content
+  metrics   Json?    // Stores age, weight, height at time of generation
+  createdAt DateTime @default(now())
 }

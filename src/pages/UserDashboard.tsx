@@ -5,12 +5,13 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
 import NotificationPanel from '@/components/NotificationPanel';
-import { getPosts, getSessions, getUserComments, deleteComment } from '@/lib/api';
+import { getPosts, getSessions, getUserComments, deleteComment, getAIPlanHistory, updateAvatar } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Calendar, Check, ArrowRight, ShoppingCart, Trash2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { MessageSquare, Calendar, Check, ArrowRight, ShoppingCart, Trash2, Camera, User, FileText, Download, X, Utensils, Dumbbell, Brain, Heart, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import type { Post, UserCommentActivity } from '@/lib/types';
+import MarkdownRenderer from '@/components/AIHealthAssistant/MarkdownRenderer';
 
 type DiscussionEntry = {
   id: string;
@@ -38,6 +39,12 @@ export default function UserDashboard() {
     queryFn: () => getUserComments(token!),
     enabled: !!token,
   });
+  const { data: planHistory = [] } = useQuery({
+    queryKey: ['ai-plan-history'],
+    queryFn: () => getAIPlanHistory(token!),
+    enabled: !!token,
+  });
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
 
   const handleDeleteComment = async (postId: string, commentId: string) => {
     if (!token) return;
@@ -48,6 +55,22 @@ export default function UserDashboard() {
     } catch {
       toast.error('Failed to delete comment');
     }
+  };
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!token) return;
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const promise = updateAvatar(token, formData);
+    toast.promise(promise, {
+      loading: 'Updating profile picture...',
+      success: () => {
+        queryClient.invalidateQueries({ queryKey: ['current-user'] });
+        return 'Profile picture updated!';
+      },
+      error: 'Failed to upload avatar'
+    });
   };
 
   if (!user) return <Navigate to="/login" />;
@@ -72,6 +95,15 @@ export default function UserDashboard() {
   const discussionEntries = [...commentEntries, ...postEntries]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const recentDiscussions = discussionEntries.slice(0, 3);
+
+  const getCategoryIcon = (category: string) => {
+    const c = category.toLowerCase();
+    if (c.includes('nutrition') || c.includes('diet')) return <Utensils className="h-5 w-5" />;
+    if (c.includes('fitness') || c.includes('workout')) return <Dumbbell className="h-5 w-5" />;
+    if (c.includes('mental') || c.includes('mind')) return <Brain className="h-5 w-5" />;
+    if (c.includes('heart')) return <Heart className="h-5 w-5" />;
+    return <Sparkles className="h-5 w-5" />;
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FDFDFB]">
@@ -196,24 +228,164 @@ export default function UserDashboard() {
           <aside className="space-y-6 lg:sticky lg:top-8">
             <NotificationPanel />
 
-            <div className="bg-[#1A2E05] text-white rounded-[2.5rem] p-6 border border-white/20 shadow-lg space-y-4">
+            <div className="bg-[#1A2E05] text-white rounded-[2.5rem] p-8 border border-white/20 shadow-lg space-y-6">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Member Snapshot</p>
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-white/20 flex items-center justify-center text-xl font-black">
-                  {user.fullName.charAt(0)}
+              
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="relative group">
+                  <div className="h-28 w-28 rounded-[2rem] bg-white/20 overflow-hidden border-2 border-white/10 flex items-center justify-center">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.fullName} className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-12 w-12 opacity-40" />
+                    )}
+                  </div>
+                  <label className="absolute bottom-0 right-0 h-10 w-10 bg-primary text-[#1A2E05] rounded-xl flex items-center justify-center cursor-pointer shadow-lg hover:bg-white transition-colors">
+                    <Camera className="h-5 w-5" />
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleAvatarUpload(e.target.files[0])} />
+                  </label>
                 </div>
-                <div>
-                  <p className="font-bold text-lg">{user.fullName}</p>
-                  <p className="text-xs uppercase tracking-[0.3em] opacity-80">Wellness Member</p>
+                
+                <div className="text-center">
+                  <p className="font-bold text-xl">{user.fullName}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Verified Member</p>
                 </div>
               </div>
-              {user.city && (
-                <p className="text-sm text-white/80">Location: {user.city}</p>
-              )}
-              <p className="text-sm text-white/80">Posts: {userPosts.length}</p>
+
+              <div className="space-y-3 pt-4 border-t border-white/10">
+                {user.city && (
+                  <div className="flex justify-between text-sm">
+                    <span className="opacity-60">Location</span>
+                    <span className="font-bold">{user.city}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="opacity-60">Total Posts</span>
+                  <span className="font-bold">{userPosts.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="opacity-60">Plans Saved</span>
+                  <span className="font-bold">{planHistory.length}</span>
+                </div>
+              </div>
             </div>
+
+            {/* Plan History Quick View */}
+            {planHistory.length > 0 && (
+              <div className="bg-white rounded-[2.5rem] p-7 border border-primary/5 shadow-sm space-y-4">
+                <h4 className="font-bold text-sm flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-emerald-600" /> My Wellness Plans
+                </h4>
+                <div className="space-y-3">
+                  {planHistory.slice(0, 3).map((plan: any) => (
+                    <div key={plan.id} className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/50 border border-emerald-100/50">
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-emerald-800 opacity-60">
+                          {new Date(plan.createdAt).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs font-bold line-clamp-1">Personalized Strategy</p>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-700" onClick={() => toast.info('View full plan detail coming soon!')}>
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-700" onClick={() => setSelectedPlan(plan)}>
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </aside>
         </div>
+
+        {/* View Plan Modal */}
+        <AnimatePresence>
+          {selectedPlan && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedPlan(null)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-4xl max-h-[90vh] bg-[#FDFDFB] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
+              >
+                <div className="p-8 border-b border-border/40 flex items-center justify-between bg-emerald-50/50">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/20">
+                      <FileText className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-2xl font-bold text-[#1A2E05]">Your Wellness Strategy</h3>
+                      <p className="text-xs font-bold text-emerald-700 uppercase tracking-widest">
+                        Generated on {new Date(selectedPlan.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedPlan(null)}
+                    className="h-12 w-12 rounded-2xl bg-white text-slate-400 hover:text-destructive transition-colors flex items-center justify-center border border-border/40 shadow-sm"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+                  {/* Stats Recap */}
+                  {selectedPlan.metrics && (
+                    <div className="grid grid-cols-3 gap-4 p-6 bg-[#1A2E05] rounded-[2rem] text-white">
+                      <div className="text-center border-r border-white/10">
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Age</p>
+                        <p className="text-xl font-bold">{selectedPlan.metrics.age} years</p>
+                      </div>
+                      <div className="text-center border-r border-white/10">
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Weight</p>
+                        <p className="text-xl font-bold">{selectedPlan.metrics.weight}kg</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Height</p>
+                        <p className="text-xl font-bold">{selectedPlan.metrics.height}ft</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Plan Content */}
+                  <div className="space-y-8">
+                    {Array.isArray(selectedPlan.planData) && selectedPlan.planData.map((section: any, idx: number) => (
+                      <div key={idx} className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                            {getCategoryIcon(section.category)}
+                          </div>
+                          <h4 className="text-xl font-bold text-[#1A2E05]">{section.category}</h4>
+                        </div>
+                        <div className="pl-12">
+                          <MarkdownRenderer content={section.content} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-8 border-t border-border/40 bg-muted/20 flex justify-end gap-4">
+                  <Button variant="ghost" className="font-bold rounded-xl" onClick={() => setSelectedPlan(null)}>
+                    Close
+                  </Button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </main>
       <Footer />
     </div>
