@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 
 const AIHealthAssistant: React.FC = () => {
   const [view, setView] = useState<'hero' | 'questionnaire' | 'loading' | 'result'>('hero');
-  const [plan, setPlan] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<any>(null);
 
   const { token } = useAuth();
 
@@ -18,10 +18,11 @@ const AIHealthAssistant: React.FC = () => {
   
   const handleClose = () => setView('hero');
 
-  const handleSubmit = async (answers: any) => {
+  const handleSubmit = async (userAnswers: any) => {
     setView('loading');
+    setAnswers(userAnswers);
     try {
-      const response = await generateAIPlan(answers, token || undefined);
+      const response = await generateAIPlan(userAnswers, token || undefined);
       setPlan(response.result);
       setView('result');
     } catch (error: any) {
@@ -33,6 +34,7 @@ const AIHealthAssistant: React.FC = () => {
 
   const handleStartOver = () => {
     setPlan(null);
+    setAnswers(null);
     setView('hero');
   };
 
@@ -78,7 +80,11 @@ const AIHealthAssistant: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <AIResultDisplay plan={plan} onStartOver={handleStartOver} />
+            <AIResultDisplay 
+              plan={plan} 
+              onStartOver={handleStartOver} 
+              userProfile={answers}
+            />
           </motion.div>
         )}
       </AnimatePresence>

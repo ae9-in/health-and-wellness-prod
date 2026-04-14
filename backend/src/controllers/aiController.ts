@@ -9,29 +9,31 @@ export const generateAIPlan = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'All questionnaire fields are required.' });
     }
 
-    const systemPrompt = `You are a professional AI health assistant for Wellspring, a health and wellness platform.
-    Your task is to provide structured, practical, and safe health advice.
+    const systemPrompt = `You are a friendly, warm, and enthusiastic professional AI health and wellness assistant for Wellspring.
+    Your goal is to inspire and support users on their wellness journey.
+    
+    STEP 1: Excitement Message
+    You MUST always start your internal thought process with this excitement message, and include it as the "excitementMessage" field in your JSON response:
+    "🎉 Are you excited for your plan? Let's build something amazing just for you!"
+    
+    STEP 2: Plan Generation
+    Generate a structured, practical, and safe health plan.
     
     RESPONSE FORMAT:
-    You must respond ONLY with a JSON array of objects. Each object represents a health category.
-    Format: [{"category": "Category Name", "content": "Markdown formatted content"}]
+    You must respond ONLY with a JSON object. Format: 
+    {
+      "excitementMessage": "🎉 Are you excited for your plan? Let's build something amazing just for you!",
+      "plan": [{"category": "Category Name", "content": "Markdown formatted content"}]
+    }
     
-    AVAILABLE CATEGORIES (Use ONLY the relevant ones from this list):
-    🥗 Nutrition & Diet
-    💪 Fitness & Workout
-    🧘 Mental Wellness
-    🧘‍♀️ Yoga & Breathing
-    🌿 Ayurveda
-    🌱 Herbal Products
-    💊 Supplements
+    AVAILABLE CATEGORIES (Use ONLY relevant ones):
+    🥗 Nutrition & Diet, 💪 Fitness & Workout, 🧘 Mental Wellness, 🧘‍♀️ Yoga & Breathing, 🌿 Ayurveda, 🌱 Herbal Products, 💊 Supplements
     
     RULES:
-    1. Detect which categories are relevant to the user's question and goals.
-    2. Respond ONLY for the relevant categories.
-    3. The "content" field should use Markdown (**bold**, lists, ### headings, etc.).
-    4. Do not include any text outside the JSON array.
-    5. Ensure the JSON is valid.
-    6. Incorporate the user's details into the content naturally.`;
+    1. Respond ONLY with the JSON object.
+    2. Use Markdown for content (bold, lists, headings).
+    3. Detect relevant categories based on user goals.
+    4. Incorporate user details naturally.`;
 
     const userPrompt = `User Details:
 Goal: ${goal}
@@ -41,7 +43,7 @@ Diet: ${dietPreference}
 Activity Level: ${activityLevel}
 Focus: ${focusArea}
 
-Generate a personalized health plan focusing on the relevant categories from the list provided.`;
+Generate a personalized health plan following the two steps strictly.`;
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [
@@ -55,21 +57,23 @@ Generate a personalized health plan focusing on the relevant categories from the
         },
       ],
       model: 'llama-3.3-70b-versatile',
-      temperature: 0.6, // Slightly lower temperature for more consistent JSON
+      temperature: 0.6,
       max_tokens: 3000,
-      response_format: { type: "json_object" } // Experimental but helps orient the model
+      response_format: { type: "json_object" }
     });
 
-    let aiResponse = chatCompletion.choices[0]?.message?.content || '[]';
+    let aiResponse = chatCompletion.choices[0]?.message?.content || '{}';
     
-    // Safety check: if the model returned a wrapper object like { "plan": [...] } or { "response": [...] }, extract the array
+    // Validate or fix format if needed
     try {
       const parsed = JSON.parse(aiResponse);
-      if (!Array.isArray(parsed) && typeof parsed === 'object') {
-        const values = Object.values(parsed);
-        const arrayFound = values.find(val => Array.isArray(val));
-        if (arrayFound) {
-          aiResponse = JSON.stringify(arrayFound);
+      if (!parsed.plan || !parsed.excitementMessage) {
+        // If the model returned just the array, wrap it
+        if (Array.isArray(parsed)) {
+          aiResponse = JSON.stringify({
+            excitementMessage: "🎉 Are you excited for your plan? Let's build something amazing just for you!",
+            plan: parsed
+          });
         }
       }
     } catch (e) {
