@@ -60,12 +60,18 @@ const AIResultDisplay: React.FC<AIResultDisplayProps> = ({ plan, onStartOver, us
     }
   }, [plan]);
 
+  const stripSymbols = (text: string) => {
+    // This regex removes emojis and other non-standard symbols that break jsPDF encoding
+    // Strictly allowing standard ASCII and basic Latin-1 punctuation
+    return text.replace(/[^\x00-\x7F\u00A0-\u00FF]/g, '');
+  };
+
   const handleDownloadPDF = async () => {
     setIsExporting(true);
     document.body.classList.add('exporting-pdf');
     try {
       const doc = new jsPDF();
-      const userName = user?.fullName || "Valued Member";
+      const userName = stripSymbols(user?.fullName || "Valued Member");
       
       // Header
       doc.setFillColor(79, 113, 83); // Wellspring Green
@@ -92,12 +98,12 @@ const AIResultDisplay: React.FC<AIResultDisplayProps> = ({ plan, onStartOver, us
           startY: 65,
           head: [['Metric', 'Your Detail']],
           body: [
-            ['Goal', userProfile.goal || 'General Wellness'],
-            ['Age Group', userProfile.ageGroup || 'N/A'],
-            ['Gender', userProfile.gender || 'N/A'],
-            ['Diet Preference', userProfile.dietPreference || 'N/A'],
-            ['Activity Level', userProfile.activityLevel || 'N/A'],
-            ['Focus Area', userProfile.focusArea || 'General'],
+            ['Goal', stripSymbols(userProfile.goal || 'General Wellness')],
+            ['Age Group', stripSymbols(userProfile.ageGroup || 'N/A')],
+            ['Gender', stripSymbols(userProfile.gender || 'N/A')],
+            ['Diet Preference', stripSymbols(userProfile.dietPreference || 'N/A')],
+            ['Activity Level', stripSymbols(userProfile.activityLevel || 'N/A')],
+            ['Focus Area', stripSymbols(userProfile.focusArea || 'General')],
           ],
           theme: 'striped',
           headStyles: { fillColor: [79, 113, 83] },
@@ -117,17 +123,18 @@ const AIResultDisplay: React.FC<AIResultDisplayProps> = ({ plan, onStartOver, us
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(79, 113, 83);
-        doc.text(section.category, 20, lastY);
+        // Ensure headings are stripped of any leftover symbols
+        doc.text(stripSymbols(section.category), 20, lastY);
         
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(50, 50, 50);
         
         // Basic Markdown Strip and Split
-        const cleanContent = section.content
+        const cleanContent = stripSymbols(section.content
           .replace(/\*\*/g, '')
           .replace(/###/g, '')
-          .replace(/- /g, '\u2022 ');
+          .replace(/- /g, '- '));
           
         const lines = doc.splitTextToSize(cleanContent, 170);
         doc.text(lines, 20, lastY + 7);
