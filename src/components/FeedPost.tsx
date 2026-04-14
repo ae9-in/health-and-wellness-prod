@@ -324,16 +324,7 @@ export default function FeedPost({ post, onSelect, initialShowComments, pageSour
       {/* Bottom Bar: Interactions */}
       <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100/50">
         <div className="flex items-center justify-between mb-6">
-           <div className="flex -space-x-2">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-200 overflow-hidden shadow-sm">
-                  <img src={`https://i.pravatar.cc/100?img=${i + 15}`} alt="" className="w-full h-full object-cover" />
-                </div>
-              ))}
-              <div className="h-8 w-14 rounded-full border-2 border-white bg-white flex items-center justify-center shadow-sm">
-                 <span className="text-[10px] font-black text-slate-400">+{likesCount > 3 ? likesCount - 3 : 0}</span>
-              </div>
-           </div>
+
            <div className="flex items-center gap-4">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{post.comments.length} Shared Insights</span>
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Premium Content</span>
