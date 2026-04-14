@@ -100,7 +100,7 @@ const AIResultDisplay: React.FC<AIResultDisplayProps> = ({ plan, onStartOver, us
           body: [
             ['Age', stripSymbols(`${userProfile.age} years` || 'N/A')],
             ['Weight', stripSymbols(`${userProfile.weight} kg` || 'N/A')],
-            ['Height', stripSymbols(`${userProfile.height} cm` || 'N/A')],
+            ['Height', stripSymbols(`${userProfile.height} feet` || 'N/A')],
             ['Goal', stripSymbols(userProfile.goal || 'General Wellness')],
             ['Gender', stripSymbols(userProfile.gender || 'N/A')],
             ['Diet Preference', stripSymbols(userProfile.dietPreference || 'N/A')],

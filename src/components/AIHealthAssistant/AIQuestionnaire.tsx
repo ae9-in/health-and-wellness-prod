@@ -28,9 +28,9 @@ const QUESTIONS: { id: string; text: string; options?: string[]; placeholder?: s
   },
   {
     id: 'height',
-    text: 'What is your height (in cm)?',
+    text: 'What is your height (in feet)?',
     type: 'number',
-    placeholder: 'e.g., 175',
+    placeholder: 'e.g., 5.8',
   },
   {
     id: 'goal',
@@ -142,7 +142,7 @@ const AIQuestionnaire: React.FC<AIQuestionnaireProps> = ({ onClose, onSubmit }) 
                   {currentQuestion.text}
                 </h4>
                 {currentQuestion.id === 'intro' && (
-                  <p className="text-emerald-600 font-medium">Could you share your age, weight (in kg), and height (in cm)? This helps me make your plan as accurate as possible!</p>
+                  <p className="text-emerald-600 font-medium">Could you share your age, weight (in kg), and height (in feet)? This helps me make your plan as accurate as possible!</p>
                 )}
               </div>
 

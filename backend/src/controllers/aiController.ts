@@ -42,13 +42,13 @@ export const generateAIPlan = async (req: Request, res: Response) => {
     1. Respond ONLY with the JSON object.
     2. Use Markdown for content (bold, lists, headings) but keep it emoji-free.
     3. Detect relevant categories based on user goals.
-    4. Incorporate user details (Age: ${age}, Weight: ${weight}kg, Height: ${height}cm) naturally.`;
+    4. Incorporate user details (Age: ${age}, Weight: ${weight}kg, Height: ${height} feet) naturally.`;
 
     const userPrompt = `User Details:
 Goal: ${goal}
 Age: ${age} years
 Weight: ${weight} kg
-Height: ${height} cm
+Height: ${height} feet
 Gender: ${gender}
 Diet: ${dietPreference}
 Activity Level: ${activityLevel}
