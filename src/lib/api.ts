@@ -416,7 +416,9 @@ export async function getPublicSettings() {
 // AI Health Assistant API
 export async function generateAIPlan(payload: {
   goal: string;
-  ageGroup: string;
+  age: string;
+  weight: string;
+  height: string;
   gender: string;
   dietPreference: string;
   activityLevel: string;
