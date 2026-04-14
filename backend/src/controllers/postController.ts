@@ -324,6 +324,8 @@ export async function deletePost(req: AuthRequest, res: Response): Promise<void>
     const postId = req.params.postId as string;
     const userId = req.userId!;
     
+    const userRole = req.userRole;
+    
     // Find the post first
     const post = await prisma.post.findUnique({
       where: { id: postId },
@@ -335,8 +337,11 @@ export async function deletePost(req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
-    // Admins delete via adminController, so here we STRICTLY enforce author ID
-    if (post.authorId !== userId) {
+    // Authorization: Author or Admin
+    const isAuthor = post.authorId === userId;
+    const isAdmin = userRole === 'ADMIN';
+
+    if (!isAuthor && !isAdmin) {
       res.status(403).json({ error: 'You are not authorized to delete this post' });
       return;
     }
