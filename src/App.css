@@ -586,7 +586,9 @@ body.has-custom-cursor.cursor-hidden {
 }
 
 body.has-custom-cursor.cursor-hidden .custom-cursor-dot,
-body.has-custom-cursor.cursor-hidden .custom-cursor-ring {
+body.has-custom-cursor.cursor-hidden .custom-cursor-ring,
+body.has-custom-cursor.exporting-pdf .custom-cursor-dot,
+body.has-custom-cursor.exporting-pdf .custom-cursor-ring {
   opacity: 0 !important;
   visibility: hidden !important;
 }

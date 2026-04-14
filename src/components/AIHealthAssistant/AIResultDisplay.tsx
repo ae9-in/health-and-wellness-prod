@@ -148,6 +148,7 @@ const AIResultDisplay: React.FC<AIResultDisplayProps> = ({ plan, onStartOver, us
 
   const handleDownloadPDF = async () => {
     setIsExporting(true);
+    document.body.classList.add('exporting-pdf');
     try {
       const doc = new jsPDF();
       const userName = user?.fullName || "Valued Member";
@@ -238,6 +239,7 @@ const AIResultDisplay: React.FC<AIResultDisplayProps> = ({ plan, onStartOver, us
       toast.error("Failed to generate PDF. Please try again.");
     } finally {
       setIsExporting(false);
+      document.body.classList.remove('exporting-pdf');
     }
   };
 
