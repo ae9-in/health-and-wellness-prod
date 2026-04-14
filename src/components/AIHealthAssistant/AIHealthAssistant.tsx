@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 
 const AIHealthAssistant: React.FC = () => {
   const [view, setView] = useState<'hero' | 'questionnaire' | 'loading' | 'result'>('hero');
+  const [plan, setPlan] = useState<string | null>(null);
   const [answers, setAnswers] = useState<any>(null);
 
   const { token } = useAuth();
