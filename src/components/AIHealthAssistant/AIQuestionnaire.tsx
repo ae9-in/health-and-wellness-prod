@@ -8,16 +8,34 @@ interface AIQuestionnaireProps {
   onSubmit: (answers: any) => void;
 }
 
-const QUESTIONS = [
+const QUESTIONS: { id: string; text: string; options?: string[]; placeholder?: string; type?: 'text' | 'number' }[] = [
+  {
+    id: 'intro',
+    text: 'Before I create your personalized plan, I just need a few quick details from you!',
+    options: ['Let\'s Go!'],
+  },
+  {
+    id: 'age',
+    text: 'How old are you?',
+    type: 'number',
+    placeholder: 'Enter your age',
+  },
+  {
+    id: 'weight',
+    text: 'What is your weight (in kg)?',
+    type: 'number',
+    placeholder: 'e.g., 70',
+  },
+  {
+    id: 'height',
+    text: 'What is your height (in cm)?',
+    type: 'number',
+    placeholder: 'e.g., 175',
+  },
   {
     id: 'goal',
     text: 'What is your goal?',
     options: ['Weight Loss', 'Weight Gain', 'Muscle Gain', 'Maintain Fitness'],
-  },
-  {
-    id: 'ageGroup',
-    text: 'Age group?',
-    options: ['18–25', '26–35', '35+'],
   },
   {
     id: 'gender',
@@ -44,10 +62,15 @@ const QUESTIONS = [
 const AIQuestionnaire: React.FC<AIQuestionnaireProps> = ({ onClose, onSubmit }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [inputValue, setInputValue] = useState('');
 
-  const handleOptionSelect = (option: string) => {
-    const newAnswers = { ...answers, [QUESTIONS[currentStep].id]: option };
+  const handleNext = (val?: string) => {
+    const value = val || inputValue;
+    if (!value && !QUESTIONS[currentStep].options) return;
+
+    const newAnswers = { ...answers, [QUESTIONS[currentStep].id]: value };
     setAnswers(newAnswers);
+    setInputValue('');
 
     if (currentStep < QUESTIONS.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -59,10 +82,12 @@ const AIQuestionnaire: React.FC<AIQuestionnaireProps> = ({ onClose, onSubmit }) 
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      setInputValue(answers[QUESTIONS[currentStep - 1].id] || '');
     }
   };
 
   const progress = ((currentStep + 1) / QUESTIONS.length) * 100;
+  const currentQuestion = QUESTIONS[currentStep];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -102,7 +127,7 @@ const AIQuestionnaire: React.FC<AIQuestionnaireProps> = ({ onClose, onSubmit }) 
         </div>
 
         {/* Question Area */}
-        <div className="p-8 min-h-[400px] flex flex-col">
+        <div className="p-8 min-h-[420px] flex flex-col">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -112,30 +137,57 @@ const AIQuestionnaire: React.FC<AIQuestionnaireProps> = ({ onClose, onSubmit }) 
               transition={{ duration: 0.3 }}
               className="flex-grow space-y-8"
             >
-              <h4 className="text-2xl font-display font-semibold text-slate-900 text-center">
-                {QUESTIONS[currentStep].text}
-              </h4>
-
-              <div className="grid gap-3">
-                {QUESTIONS[currentStep].options.map((option) => (
-                  <motion.button
-                    key={option}
-                    whileHover={{ scale: 1.01, backgroundColor: '#f8fafc' }}
-                    whileTap={{ scale: 0.99 }}
-                    onClick={() => handleOptionSelect(option)}
-                    className={`w-full p-5 text-left rounded-2xl border-2 transition-all flex items-center justify-between group ${
-                      answers[QUESTIONS[currentStep].id] === option
-                        ? 'border-emerald-500 bg-emerald-50/50'
-                        : 'border-slate-100 hover:border-emerald-200'
-                    }`}
-                  >
-                    <span className="font-medium text-slate-700">{option}</span>
-                    <ChevronRight className={`w-5 h-5 transition-transform group-hover:translate-x-1 ${
-                      answers[QUESTIONS[currentStep].id] === option ? 'text-emerald-500' : 'text-slate-300'
-                    }`} />
-                  </motion.button>
-                ))}
+              <div className="space-y-4 text-center">
+                <h4 className="text-2xl font-display font-semibold text-slate-900 leading-tight">
+                  {currentQuestion.text}
+                </h4>
+                {currentQuestion.id === 'intro' && (
+                  <p className="text-emerald-600 font-medium">Could you share your age, weight (in kg), and height (in cm)? This helps me make your plan as accurate as possible!</p>
+                )}
               </div>
+
+              {currentQuestion.options ? (
+                <div className="grid gap-3">
+                  {currentQuestion.options.map((option) => (
+                    <motion.button
+                      key={option}
+                      whileHover={{ scale: 1.01, backgroundColor: '#f8fafc' }}
+                      whileTap={{ scale: 0.99 }}
+                      onClick={() => handleNext(option)}
+                      className={`w-full p-5 text-left rounded-2xl border-2 transition-all flex items-center justify-between group ${
+                        answers[currentQuestion.id] === option
+                          ? 'border-emerald-500 bg-emerald-50/50'
+                          : 'border-slate-100 hover:border-emerald-200'
+                      }`}
+                    >
+                      <span className="font-medium text-slate-700">{option}</span>
+                      <ChevronRight className={`w-5 h-5 transition-transform group-hover:translate-x-1 ${
+                        answers[currentQuestion.id] === option ? 'text-emerald-500' : 'text-slate-300'
+                      }`} />
+                    </motion.button>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-6 max-w-sm mx-auto w-full">
+                  <input
+                    type={currentQuestion.type || 'text'}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+                    placeholder={currentQuestion.placeholder}
+                    autoFocus
+                    className="w-full text-center text-3xl font-display font-bold p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 focus:bg-white outline-none transition-all placeholder:text-slate-300"
+                  />
+                  <Button 
+                    onClick={() => handleNext()}
+                    disabled={!inputValue}
+                    className="w-full h-14 rounded-xl text-lg font-bold bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200"
+                  >
+                    Continue
+                    <ChevronRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
 

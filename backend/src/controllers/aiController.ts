@@ -3,21 +3,24 @@ import groq from '../lib/groq';
 
 export const generateAIPlan = async (req: Request, res: Response) => {
   try {
-    const { goal, ageGroup, gender, dietPreference, activityLevel, focusArea } = req.body;
+    const { goal, age, weight, height, gender, dietPreference, activityLevel, focusArea } = req.body;
 
-    if (!goal || !ageGroup || !gender || !dietPreference || !activityLevel || !focusArea) {
+    if (!goal || !age || !weight || !height || !gender || !dietPreference || !activityLevel || !focusArea) {
       return res.status(400).json({ error: 'All questionnaire fields are required.' });
     }
 
     const systemPrompt = `You are a friendly, warm, and enthusiastic professional AI health and wellness assistant for Wellspring.
     Your goal is to inspire and support users on their wellness journey.
     
-    STEP 1: Excitement Message
+    STEP 1: Validate Details
+    You have been provided with the user's exact age, weight, and height. Acknowledge these details in your plan generation.
+    
+    STEP 2: Excitement Message
     You MUST always start your internal thought process with this exact excitement message, and include it as the "excitementMessage" field in your JSON response:
     "🎉 Are you excited for your plan? Let's build something amazing just for you!"
     
-    STEP 2: Plan Generation
-    Generate a structured, practical, and safe health plan. 
+    STEP 3: Plan Generation
+    Generate a structured, practical, and safe health plan based on their physical profile. 
     
     STRICT FORMATTING RULES FOR PDF COMPATIBILITY:
     - NEVER use emojis, icons, or special symbols in the category names or content body.
@@ -39,17 +42,19 @@ export const generateAIPlan = async (req: Request, res: Response) => {
     1. Respond ONLY with the JSON object.
     2. Use Markdown for content (bold, lists, headings) but keep it emoji-free.
     3. Detect relevant categories based on user goals.
-    4. Incorporate user details naturally.`;
+    4. Incorporate user details (Age: ${age}, Weight: ${weight}kg, Height: ${height}cm) naturally.`;
 
     const userPrompt = `User Details:
 Goal: ${goal}
-Age: ${ageGroup}
+Age: ${age} years
+Weight: ${weight} kg
+Height: ${height} cm
 Gender: ${gender}
 Diet: ${dietPreference}
 Activity Level: ${activityLevel}
 Focus: ${focusArea}
 
-Generate a personalized health plan following the two steps strictly.`;
+Generate a personalized health plan following the steps strictly.`;
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [
