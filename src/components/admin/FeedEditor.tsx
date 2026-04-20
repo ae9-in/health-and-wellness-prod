@@ -24,14 +24,9 @@ import { toast } from 'sonner';
 import { createPost, updatePostAdmin } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { CATEGORIES } from '@/lib/constants';
 
 interface FeedEditorProps {
-  post?: any;
-  onCancel: () => void;
-  onSave: () => void;
-}
-
-const CATEGORIES = ['Nutrition', 'Fitness', 'Mental Health', 'Sleep', 'Recovery', 'Mindfulness'];
 
 export default function FeedEditor({ post, onCancel, onSave }: FeedEditorProps) {
   const { token } = useAuth();

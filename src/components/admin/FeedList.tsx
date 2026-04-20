@@ -32,16 +32,17 @@ import { toast } from 'sonner';
 
 interface FeedListProps {
   onEdit: (post: any) => void;
+  category?: string;
 }
 
-export default function FeedList({ onEdit }: FeedListProps) {
+export default function FeedList({ onEdit, category }: FeedListProps) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: posts = [], isLoading } = useQuery({
-    queryKey: ['adminPosts'],
-    queryFn: () => getPosts()
+    queryKey: ['adminPosts', category],
+    queryFn: () => getPosts(category)
   });
 
   const deleteMutation = useMutation({

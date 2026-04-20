@@ -44,7 +44,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   Leaf, ShieldCheck, Users, MessageSquare, Calendar, Handshake, Plus, Trash2, 
   Ban, Check, X, Edit, UserCheck, UserX, Package, TrendingUp, DollarSign, 
-  Globe, LayoutDashboard, Search, Filter, ArrowUpRight, ShieldAlert, BadgeCheck, Loader2
+  Globe, LayoutDashboard, Search, Filter, ArrowUpRight, ShieldAlert, BadgeCheck, Loader2,
+  HeartPulse
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPrice, resolveImageUrl } from '@/lib/utils';
@@ -52,6 +53,7 @@ import EditProductModal from '@/components/EditProductModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { socket } from '@/lib/socket';
 import FeedManagementContent from '@/components/admin/FeedManagementContent';
+import ChronicCareContent from '@/components/admin/ChronicCareContent';
 
 type GrowthPoint = {
   label: string;
@@ -390,6 +392,7 @@ export default function AdminDashboard() {
               { id: 'marketplace', label: 'Marketplace', icon: Package },
               { id: 'commission-requests', label: 'Commission Queue', icon: TrendingUp },
               { id: 'feed-manager', label: 'Feed Manager', icon: MessageSquare },
+              { id: 'chronic-care', label: 'Chronic Care', icon: HeartPulse },
               { id: 'sessions', label: 'Wellness Events', icon: Calendar },
               { id: 'settings', label: 'Platform Settings', icon: Globe },
             ].map(item => (
@@ -436,6 +439,7 @@ export default function AdminDashboard() {
                  activeTab === 'partners' ? 'Partner Ecosystem' : 
                  activeTab === 'marketplace' ? 'Marketplace Control' :
                  activeTab === 'feed-manager' ? 'Feed Management' :
+                 activeTab === 'chronic-care' ? 'Chronic Care' :
                  activeTab === 'settings' ? 'Platform Settings' :
                  'Moderation Suite'}
               </h1>
@@ -1044,6 +1048,10 @@ export default function AdminDashboard() {
 
             {activeTab === 'feed-manager' && (
               <FeedManagementContent />
+            )}
+
+            {activeTab === 'chronic-care' && (
+              <ChronicCareContent />
             )}
 
             {activeTab === 'commission-requests' && (
