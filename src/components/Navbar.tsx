@@ -9,7 +9,6 @@ import {
   User,
   LogOut,
   LayoutDashboard,
-  Settings,
   ChevronDown,
   ShoppingBag,
   MessageSquare,
@@ -142,10 +141,6 @@ export default function Navbar() {
                         <User className="h-4 w-4" />
                         <span className="font-bold text-sm">My Profile</span>
                       </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center gap-2 cursor-pointer p-3 rounded-xl text-destructive focus:text-destructive">
-                      <Settings className="h-4 w-4" />
-                      <span className="font-bold text-sm">Settings</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
