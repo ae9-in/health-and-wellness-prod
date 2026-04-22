@@ -1047,11 +1047,15 @@ export default function AdminDashboard() {
             )}
 
             {activeTab === 'feed-manager' && (
-              <FeedManagementContent />
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] border border-border/50 shadow-sm p-8">
+                <FeedManagementContent />
+              </motion.div>
             )}
 
             {activeTab === 'chronic-care' && (
-              <ChronicCareContent />
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[2.5rem] border border-border/50 shadow-sm p-8">
+                <ChronicCareContent />
+              </motion.div>
             )}
 
             {activeTab === 'commission-requests' && (

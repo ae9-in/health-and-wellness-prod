@@ -395,7 +395,7 @@ const productFilters = ['Category', 'Price', 'Brand', 'Popular products'];
               Browse through our specialized wellness categories and find the community that speaks to you.
             </p>
             <Button variant="outline" className="rounded-xl border-[#4F7153]/30 bg-white text-[#4F7153] font-medium px-6" asChild>
-              <Link to="/categories" className="flex items-center gap-2">
+              <Link to="/discussions" className="flex items-center gap-2">
                 View All Communities <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

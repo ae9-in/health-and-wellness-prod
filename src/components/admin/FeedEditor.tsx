@@ -112,10 +112,10 @@ export default function FeedEditor({ post, onCancel, onSave }: FeedEditorProps) 
 
   const saveMutation = useMutation({
     mutationFn: (payload: FormData) => 
-      post ? updatePostAdmin(token!, post.id, payload) : createPost(token!, payload),
+      (post && post.id) ? updatePostAdmin(token!, post.id, payload) : createPost(token!, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminPosts'] });
-      toast.success(post ? 'Post updated successfully' : 'Post published successfully');
+      toast.success(post?.id ? 'Post updated successfully' : 'Post published successfully');
       // Cleanup object URLs
       pendingImages.forEach(p => URL.revokeObjectURL(p.preview));
       if (pendingVideo) URL.revokeObjectURL(pendingVideo.preview);
@@ -341,7 +341,11 @@ export default function FeedEditor({ post, onCancel, onSave }: FeedEditorProps) 
                 disabled={isUploading}
                 className="w-full h-14 rounded-2xl bg-[#2C2C2C] hover:bg-black text-white font-black uppercase tracking-widest text-lg transition-all shadow-xl shadow-black/10"
              >
-               {isUploading ? <Loader2 className="h-6 w-6 animate-spin" /> : (post ? 'Update Post' : 'Publish Post')}
+                {saveMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin mx-auto" />
+                ) : (
+                  post?.id ? 'Update Guide' : 'Publish to Community'
+                )}
              </Button>
              <Button 
                 variant="ghost" 
