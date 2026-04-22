@@ -21,7 +21,9 @@ import TermsOfUse from "./pages/TermsOfUse";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import PartnerTerms from "./pages/PartnerTerms";
 import NotFound from "./pages/NotFound";
+import Cart from "./pages/Cart";
 import CustomCursor from "@/components/CustomCursor";
+import { CartProvider } from "@/lib/CartContext";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -52,26 +54,29 @@ const App = () => {
         <CustomCursor />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/profile" element={<Dashboard />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/discussions" element={<Discussions />} />
-              <Route path="/sessions" element={<Sessions />} />
-              <Route path="/partner" element={<Partner />} />
-              <Route path="/community" element={<CommunityFeed />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/products/:id" element={<ProductDetails />} />
-              <Route path="/admin" element={<AdminLogin />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/terms" element={<TermsOfUse />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/partner-terms" element={<PartnerTerms />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <CartProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/profile" element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/discussions" element={<Discussions />} />
+                <Route path="/sessions" element={<Sessions />} />
+                <Route path="/partner" element={<Partner />} />
+                <Route path="/community" element={<CommunityFeed />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/products/:id" element={<ProductDetails />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/admin" element={<AdminLogin />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/terms" element={<TermsOfUse />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/partner-terms" element={<PartnerTerms />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </CartProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

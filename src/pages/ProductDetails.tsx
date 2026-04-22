@@ -25,9 +25,11 @@ import {
 import { motion } from 'framer-motion';
 import { formatPrice, parseVariants, resolveImageUrl } from '@/lib/utils';
 import { socket } from '@/lib/socket';
+import { useCart } from '@/lib/CartContext';
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
@@ -298,10 +300,15 @@ export default function ProductDetails() {
                   size="lg" 
                   className="flex-1 rounded-full h-14 text-lg font-bold shadow-xl hover:shadow-primary/20 transition-all"
                 >
-                  <ShoppingCart className="w-5 h-5 mr-3" /> Buy Now
+                  Buy Now
                 </Button>
-                <Button variant="outline" size="lg" className="rounded-full h-14 px-8 border-primary/20 hover:bg-primary/5 transition-all">
-                  Contact Brand
+                <Button 
+                  onClick={() => addToCart(product)}
+                  variant="outline" 
+                  size="lg" 
+                  className="flex-1 rounded-full h-14 text-lg font-bold border-primary/20 hover:bg-primary/5 transition-all"
+                >
+                  <ShoppingCart className="w-5 h-5 mr-3" /> Add to Cart
                 </Button>
               </div>
             </motion.div>

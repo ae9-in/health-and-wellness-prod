@@ -5,12 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart, Star } from 'lucide-react';
 import { formatPrice, resolveImageUrl } from '@/lib/utils';
+import { useCart } from '@/lib/CartContext';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart();
   const brandName = product.brand?.name || 'Wellspring Brand';
 
   return (
@@ -55,7 +57,14 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="text-xl font-bold text-primary">
           {formatPrice(Number(product.price || 0))}
         </div>
-        <Button size="sm" className="rounded-full h-10 w-10 p-0 shadow-md">
+        <Button 
+          size="sm" 
+          className="rounded-full h-10 w-10 p-0 shadow-md"
+          onClick={(e) => {
+            e.preventDefault();
+            addToCart(product);
+          }}
+        >
           <ShoppingCart className="h-4 w-4" />
         </Button>
       </CardFooter>

@@ -17,7 +17,9 @@ import {
   Calendar,
   Home,
   ArrowLeft,
+  ShoppingCart,
 } from 'lucide-react';
+import { useCart } from '@/lib/CartContext';
 import NotificationBell from './NotificationBell';
 import {
   DropdownMenu,
@@ -34,6 +36,7 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { cartCount } = useCart();
   const [open, setOpen] = useState(false);
 
   const navLinks = [
@@ -94,6 +97,15 @@ export default function Navbar() {
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
+          <Link to="/cart" className="relative p-2 text-muted-foreground hover:text-primary transition-colors hidden sm:block">
+            <ShoppingCart className="h-6 w-6" />
+            {cartCount > 0 && (
+              <span className="absolute top-0 right-0 h-4 w-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
+          </Link>
+          
           {user ? (
             <div className="flex items-center gap-3">
               <NotificationBell />
@@ -147,13 +159,23 @@ export default function Navbar() {
                 </DropdownMenu>
               </div>
 
-              {/* Mobile Account Action */}
-              <button 
-                className="md:hidden h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground"
-                onClick={() => setOpen(!open)}
-              >
-                <User className="h-5 w-5" />
-              </button>
+              {/* Mobile Account Action & Cart */}
+              <div className="md:hidden flex items-center gap-2">
+                <Link to="/cart" className="relative p-2 text-muted-foreground">
+                  <ShoppingCart className="h-6 w-6" />
+                  {cartCount > 0 && (
+                    <span className="absolute top-0 right-0 h-4 w-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+                <button 
+                  className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground"
+                  onClick={() => setOpen(!open)}
+                >
+                  <User className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-2">
