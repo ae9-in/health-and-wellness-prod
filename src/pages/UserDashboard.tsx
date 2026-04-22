@@ -285,13 +285,6 @@ export default function UserDashboard() {
                         </p>
                         <p className="text-xs font-bold line-clamp-1">Personalized Strategy</p>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-700" onClick={() => toast.info('View full plan detail coming soon!')}>
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-700" onClick={() => setSelectedPlan(plan)}>
                         <ArrowRight className="h-4 w-4" />
                       </Button>

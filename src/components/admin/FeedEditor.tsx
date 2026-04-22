@@ -27,7 +27,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CATEGORIES } from '@/lib/constants';
 
 interface FeedEditorProps {
-
+  post?: any;
+  onCancel: () => void;
+  onSave: () => void;
+}
 export default function FeedEditor({ post, onCancel, onSave }: FeedEditorProps) {
   const { token } = useAuth();
   const queryClient = useQueryClient();

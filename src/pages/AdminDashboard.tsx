@@ -24,9 +24,9 @@ import {
   deletePostAdmin,
   updatePostAdmin,
   togglePostSponsored,
-  createSession,
-  updateSession,
-  deleteSession,
+  adminCreateSession,
+  adminUpdateSession,
+  adminDeleteSession,
   getAdminComments,
   deleteAdminComment,
   getAdminCommissionRequests,
@@ -275,9 +275,9 @@ export default function AdminDashboard() {
   const [editSessionId, setEditSessionId] = useState<string | null>(null);
   const [sessionImage, setSessionImage] = useState<File | null>(null);
 
-  const createSessionMutation = useMutation({ mutationFn: (payload: Omit<Session, 'id' | 'registeredUsers'>) => createSession(token!, payload), ...mutationOptions });
-  const updateSessionMutation = useMutation({ mutationFn: ({id, payload}: {id: string, payload: Partial<Omit<Session, 'id' | 'registeredUsers'>>}) => updateSession(token!, id, payload), ...mutationOptions });
-  const deleteSessionMutation = useMutation({ mutationFn: (id: string) => deleteSession(token!, id), ...mutationOptions });
+  const createSessionMutation = useMutation({ mutationFn: (payload: Omit<Session, 'id' | 'registeredUsers'>) => adminCreateSession(token!, payload), ...mutationOptions });
+  const updateSessionMutation = useMutation({ mutationFn: ({id, payload}: {id: string, payload: Partial<Omit<Session, 'id' | 'registeredUsers'>>}) => adminUpdateSession(token!, id, payload), ...mutationOptions });
+  const deleteSessionMutation = useMutation({ mutationFn: (id: string) => adminDeleteSession(token!, id), ...mutationOptions });
 
   if (!isAdmin || !token) {
     return (
@@ -1267,6 +1267,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </div>
+                  </div>
                   ))}
                 </div>
               </div>
