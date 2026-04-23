@@ -102,7 +102,10 @@ export default function AdminLogin() {
             </div>
 
             <div className="space-y-2">
-              <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Secure Key</Label>
+              <div className="flex items-baseline justify-between gap-4">
+                <Label className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Secure Key</Label>
+                <Link to="/admin/forgot-password" className="text-[10px] font-black uppercase tracking-[0.35em] text-primary hover:text-primary/80">Forgot?</Link>
+              </div>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 transition-colors group-focus-within:text-primary pointer-events-none" />
                 <PasswordInput

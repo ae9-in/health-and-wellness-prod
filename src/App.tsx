@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Discussions from "./pages/Discussions";
@@ -15,6 +16,7 @@ import Partner from "./pages/Partner";
 import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
 import AdminLogin from "./pages/AdminLogin";
+import AdminForgotPassword from "./pages/AdminForgotPassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import CommunityFeed from "./pages/CommunityFeed";
 import TermsOfUse from "./pages/TermsOfUse";
@@ -58,6 +60,7 @@ const App = () => {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/profile" element={<Dashboard />} />
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -70,6 +73,7 @@ const App = () => {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/admin" element={<AdminLogin />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/terms" element={<TermsOfUse />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
