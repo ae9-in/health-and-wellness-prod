@@ -118,7 +118,10 @@ export async function reviewBrand(req: any & RealtimeRequest, res: Response): Pr
 export async function listAdminProducts(_req: any, res: Response): Promise<void> {
   try {
     const products = await prisma.product.findMany({
-      include: { brand: { include: { user: true } } },
+      include: { 
+        brand: { include: { user: true } },
+        variants: true
+      },
       orderBy: { createdAt: 'desc' }
     });
     res.json({ products });
@@ -231,10 +234,31 @@ export async function updateAdminProduct(req: any & RealtimeRequest, res: Respon
       updateData.images = [...existingImages, ...cloudinaryUrls];
     }
 
+    // Handle Variants
+    if (variants) {
+      const parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+      if (Array.isArray(parsedVariants)) {
+        // Delete old variants and create new ones (simplest sync strategy)
+        await prisma.productVariant.deleteMany({ where: { productId } });
+        updateData.variants = {
+          create: parsedVariants.map((v: any) => ({
+            quantity: parseFloat(v.quantity),
+            unit: v.unit,
+            price: parseFloat(v.price),
+            discountPrice: v.discountPrice ? parseFloat(v.discountPrice) : null,
+            stock: parseInt(v.stock, 10) || 0,
+          }))
+        };
+      }
+    }
+
     const product = await (prisma.product as any).update({
       where: { id: productId },
       data: updateData,
-      include: { brand: { include: { user: true } } },
+      include: { 
+        brand: { include: { user: true } },
+        variants: true 
+      },
     });
 
     req.io?.emit('product:updated', product);

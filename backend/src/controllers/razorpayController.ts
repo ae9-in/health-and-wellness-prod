@@ -18,24 +18,12 @@ export async function createRazorpayOrder(req: AuthRequest, res: Response): Prom
   try {
     const userId = req.userId!;
     const { items, totalAmount } = req.body as {
-      items: { productId: string; quantity: number; price: number }[];
+      items: { productId: string; variantId?: string; quantity: number; price: number }[];
       totalAmount: number;
     };
 
     if (!items || items.length === 0 || !totalAmount) {
       res.status(400).json({ error: 'Cart items and totalAmount are required' });
-      return;
-    }
-
-    // Validate products exist
-    const productIds = items.map((i) => i.productId);
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds }, status: 'APPROVED' },
-      select: { id: true, price: true, stock: true, name: true },
-    });
-
-    if (products.length !== productIds.length) {
-      res.status(400).json({ error: 'One or more products are unavailable' });
       return;
     }
 
@@ -59,6 +47,7 @@ export async function createRazorpayOrder(req: AuthRequest, res: Response): Prom
         items: {
           create: items.map((item) => ({
             productId: item.productId,
+            variantId: item.variantId,
             quantity: item.quantity,
             price: item.price,
           })),

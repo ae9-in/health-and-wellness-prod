@@ -299,14 +299,20 @@ export default function ProductDetails() {
                   onClick={() => setIsCheckoutOpen(true)}
                   size="lg" 
                   className="flex-1 rounded-full h-14 text-lg font-bold shadow-xl hover:shadow-primary/20 transition-all"
+                  disabled={selectedVariantIdx !== null && parseVariants(product.variants)[selectedVariantIdx]?.stock <= 0}
                 >
                   Buy Now
                 </Button>
                 <Button 
-                  onClick={() => addToCart(product)}
+                  onClick={() => {
+                    const variants = parseVariants(product.variants);
+                    const v = selectedVariantIdx !== null ? variants[selectedVariantIdx] : null;
+                    addToCart(product, v?.id);
+                  }}
                   variant="outline" 
                   size="lg" 
                   className="flex-1 rounded-full h-14 text-lg font-bold border-primary/20 hover:bg-primary/5 transition-all"
+                  disabled={selectedVariantIdx !== null && parseVariants(product.variants)[selectedVariantIdx]?.stock <= 0}
                 >
                   <ShoppingCart className="w-5 h-5 mr-3" /> Add to Cart
                 </Button>

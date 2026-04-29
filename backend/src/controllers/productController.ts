@@ -39,6 +39,7 @@ export async function getProducts(req: Request, res: Response): Promise<void> {
       where,
       include: {
         brand: true,
+        variants: true,
       },
       take: limit ? (isNaN(parseInt(String(limit))) ? undefined : parseInt(String(limit))) : undefined,
       orderBy: {
@@ -60,6 +61,7 @@ export async function getProductById(req: Request, res: Response): Promise<void>
       where: { id },
       include: {
         brand: true,
+        variants: true,
       },
     });
 

@@ -61,8 +61,15 @@ export default function Cart() {
       const orderData = await createRazorpayOrder(token, {
         items: cartItems.map((item) => ({
           productId: item.product.id,
+          variantId: item.variantId,
           quantity: item.quantity,
-          price: Number(item.product.price),
+          price: (() => {
+            if (item.variantId && item.product.variants) {
+              const v = item.product.variants.find(v => v.id === item.variantId);
+              return v ? (v.discountPrice || v.price) : Number(item.product.price);
+            }
+            return Number(item.product.price);
+          })(),
         })),
         totalAmount: cartTotal,
       });
@@ -140,13 +147,22 @@ export default function Cart() {
             <div className="grid lg:grid-cols-3 gap-12">
               {/* Cart Items */}
               <div className="lg:col-span-2 space-y-6">
-                {cartItems.map((item) => {
+                {cartItems.map((item, idx) => {
                   const image = resolveImageUrl(item.product.images?.[0] || (item.product as any).image);
-                  const price = Number(item.product.price) || 0;
+                  let price = Number(item.product.price) || 0;
+                  let variantDetails = '';
+                  
+                  if (item.variantId && item.product.variants) {
+                    const variant = item.product.variants.find(v => v.id === item.variantId);
+                    if (variant) {
+                      price = variant.discountPrice || variant.price;
+                      variantDetails = `${variant.quantity}${variant.unit}`;
+                    }
+                  }
 
                   return (
                     <div
-                      key={item.product.id}
+                      key={`${item.product.id}-${item.variantId || idx}`}
                       className="flex flex-col sm:flex-row gap-6 p-6 bg-white rounded-[2rem] shadow-sm border border-primary/5 relative"
                     >
                       <div className="w-full sm:w-32 aspect-square rounded-2xl overflow-hidden bg-slate-50 flex-shrink-0">
@@ -161,7 +177,10 @@ export default function Cart() {
                         <div>
                           <div className="flex justify-between items-start gap-4">
                             <Link to={`/products/${item.product.id}`} className="hover:text-primary transition-colors">
-                              <h3 className="font-bold text-xl line-clamp-2">{item.product.name}</h3>
+                              <h3 className="font-bold text-xl line-clamp-2">
+                                {item.product.name}
+                                {variantDetails && <span className="ml-2 text-primary/60 font-medium text-sm">({variantDetails})</span>}
+                              </h3>
                             </Link>
                             <span className="font-bold text-lg whitespace-nowrap text-primary">
                               {formatPrice(price * item.quantity)}
@@ -175,14 +194,14 @@ export default function Cart() {
                         <div className="flex items-center justify-between mt-6">
                           <div className="flex items-center bg-slate-50 rounded-full border border-slate-200">
                             <button
-                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.product.id, item.variantId, item.quantity - 1)}
                               className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-primary transition-colors"
                             >
                               <Minus className="w-4 h-4" />
                             </button>
                             <span className="w-8 text-center font-bold">{item.quantity}</span>
                             <button
-                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.product.id, item.variantId, item.quantity + 1)}
                               className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-primary transition-colors"
                             >
                               <Plus className="w-4 h-4" />
@@ -190,7 +209,7 @@ export default function Cart() {
                           </div>
 
                           <button
-                            onClick={() => removeFromCart(item.product.id)}
+                            onClick={() => removeFromCart(item.product.id, item.variantId)}
                             className="p-2 text-slate-400 hover:text-destructive hover:bg-red-50 rounded-full transition-all"
                             title="Remove item"
                           >

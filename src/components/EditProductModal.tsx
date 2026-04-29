@@ -196,14 +196,128 @@ export default function EditProductModal({ product, open, onOpenChange, onSucces
 
                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Price (₹)</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Base Price (₹)</Label>
                     <Input type="number" className="rounded-xl" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Stock</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Total Stock</Label>
                     <Input type="number" className="rounded-xl" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
                   </div>
                </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <Label className="text-sm font-black uppercase tracking-widest text-[#1A2E05]">Pricing Variants (Quantity-based)</Label>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="rounded-xl font-bold gap-2 text-primary border-primary/20 hover:bg-primary/5"
+                onClick={() => setForm(f => ({
+                  ...f,
+                  variants: [...f.variants, { quantity: '', unit: 'g', price: '', discountPrice: '', stock: '0' }]
+                }))}
+              >
+                <Plus className="h-4 w-4" /> Add Variant
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {form.variants.map((variant, idx) => (
+                <div key={idx} className="grid grid-cols-6 gap-3 items-end bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                  <div className="col-span-1">
+                    <Label className="text-[9px] font-black uppercase text-slate-400">Qty</Label>
+                    <Input 
+                      type="number" 
+                      className="rounded-xl h-10" 
+                      placeholder="500" 
+                      value={variant.quantity} 
+                      onChange={e => {
+                        const newVariants = [...form.variants];
+                        newVariants[idx].quantity = e.target.value;
+                        setForm(f => ({ ...f, variants: newVariants }));
+                      }}
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <Label className="text-[9px] font-black uppercase text-slate-400">Unit</Label>
+                    <select 
+                      className="w-full h-10 rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      value={variant.unit}
+                      onChange={e => {
+                        const newVariants = [...form.variants];
+                        newVariants[idx].unit = e.target.value;
+                        setForm(f => ({ ...f, variants: newVariants }));
+                      }}
+                    >
+                      {['g', 'kg', 'ml', 'L', 'pcs'].map(u => (
+                        <option key={u} value={u}>{u}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-span-1">
+                    <Label className="text-[9px] font-black uppercase text-slate-400">Price (₹)</Label>
+                    <Input 
+                      type="number" 
+                      className="rounded-xl h-10" 
+                      placeholder="120" 
+                      value={variant.price} 
+                      onChange={e => {
+                        const newVariants = [...form.variants];
+                        newVariants[idx].price = e.target.value;
+                        setForm(f => ({ ...f, variants: newVariants }));
+                      }}
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <Label className="text-[9px] font-black uppercase text-slate-400">Disc (₹)</Label>
+                    <Input 
+                      type="number" 
+                      className="rounded-xl h-10" 
+                      placeholder="100" 
+                      value={variant.discountPrice} 
+                      onChange={e => {
+                        const newVariants = [...form.variants];
+                        newVariants[idx].discountPrice = e.target.value;
+                        setForm(f => ({ ...f, variants: newVariants }));
+                      }}
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <Label className="text-[9px] font-black uppercase text-slate-400">Stock</Label>
+                    <Input 
+                      type="number" 
+                      className="rounded-xl h-10" 
+                      value={variant.stock} 
+                      onChange={e => {
+                        const newVariants = [...form.variants];
+                        newVariants[idx].stock = e.target.value;
+                        setForm(f => ({ ...f, variants: newVariants }));
+                      }}
+                    />
+                  </div>
+                  <div className="col-span-1 pb-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                      onClick={() => {
+                        const newVariants = form.variants.filter((_, i) => i !== idx);
+                        setForm(f => ({ ...f, variants: newVariants }));
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+
+              {form.variants.length === 0 && (
+                <div className="text-center py-8 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
+                  <p className="text-slate-400 text-sm font-medium">No custom variants added. Standard pricing applies.</p>
+                </div>
+              )}
             </div>
           </div>
 

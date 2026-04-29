@@ -9,11 +9,15 @@ export interface Brand {
 }
 
 export interface ProductVariant {
+  id: string;
+  productId: string;
   quantity: number;
-  unit: 'ml' | 'liter' | 'gram' | 'kg' | 'pieces' | 'tablets' | 'capsules';
-  size: string;
+  unit: string;
   price: number;
+  discountPrice?: number;
   stock: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Product {

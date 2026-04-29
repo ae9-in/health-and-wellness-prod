@@ -450,7 +450,7 @@ export async function updateAvatar(token: string, formData: FormData) {
 // ─── Razorpay Payment Gateway ─────────────────────────────────────────────────
 export async function createRazorpayOrder(
   token: string,
-  payload: { items: { productId: string; quantity: number; price: number }[]; totalAmount: number }
+  payload: { items: { productId: string; variantId?: string; quantity: number; price: number }[]; totalAmount: number }
 ) {
   return request<{
     orderId: string;

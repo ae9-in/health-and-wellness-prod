@@ -84,8 +84,16 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
         price: priceValue,
         commissionRate: commissionValue,
         stock: stockValue,
-        variants: parsedVariants || undefined,
         status: ApprovalStatus.PENDING,
+        variants: {
+          create: (parsedVariants && Array.isArray(parsedVariants)) ? parsedVariants.map((v: any) => ({
+            quantity: parseFloat(v.quantity),
+            unit: v.unit,
+            price: parseFloat(v.price),
+            discountPrice: v.discountPrice ? parseFloat(v.discountPrice) : null,
+            stock: parseInt(v.stock, 10) || 0,
+          })) : []
+        }
       },
     });
 
@@ -120,6 +128,7 @@ export async function listBrandProducts(req: AuthRequest, res: Response): Promis
     const products = await prisma.product.findMany({
       where: { brandId: brand.id },
       include: {
+        variants: true,
         affiliateLinks: {
           include: {
             affiliate: {
@@ -167,14 +176,6 @@ export async function updateProduct(req: AuthRequest, res: Response): Promise<vo
     if (commissionRate !== undefined) updateData.commissionRate = parseFloat(commissionRate);
     if (stock !== undefined) updateData.stock = Math.floor(Number(stock));
 
-    if (variants) {
-      try {
-        updateData.variants = typeof variants === 'string' ? JSON.parse(variants) : variants;
-      } catch (err) {
-        console.error('Failed to parse variants for update:', err);
-      }
-    }
-
     const files = req.files as Express.Multer.File[] | undefined;
     const cloudinaryUrls: string[] = [];
     if (files && files.length > 0) {
@@ -190,19 +191,28 @@ export async function updateProduct(req: AuthRequest, res: Response): Promise<vo
       updateData.images = [...existingImages, ...cloudinaryUrls];
     }
 
-    const product = await prisma.product.updateMany({
-      where: { id: productId, brandId: brand.id },
-      data: updateData,
-    });
-
-    if (product.count === 0) {
-      res.status(404).json({ error: 'Product not found' });
-      return;
+    // Handle Variants Sync
+    if (variants) {
+      const parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+      if (Array.isArray(parsedVariants)) {
+        await prisma.productVariant.deleteMany({ where: { productId } });
+        updateData.variants = {
+          create: parsedVariants.map((v: any) => ({
+            quantity: parseFloat(v.quantity),
+            unit: v.unit,
+            price: parseFloat(v.price),
+            discountPrice: v.discountPrice ? parseFloat(v.discountPrice) : null,
+            stock: parseInt(v.stock, 10) || 0,
+          }))
+        };
+      }
     }
 
-    const updatedProduct = await prisma.product.findUnique({
+    const product = await prisma.product.update({
       where: { id: productId },
+      data: updateData,
       include: { 
+        variants: true,
         brand: { 
           select: { 
             id: true, 
@@ -212,11 +222,11 @@ export async function updateProduct(req: AuthRequest, res: Response): Promise<vo
       }
     });
 
-    if (updatedProduct) {
-      (req as any).io.emit('product:updated', updatedProduct);
+    if (product) {
+      (req as any).io.emit('product:updated', product);
     }
     
-    res.json({ success: true, product: updatedProduct });
+    res.json({ success: true, product });
   } catch (error) {
     console.error('Update product error:', error);
     res.status(500).json({ error: 'Unable to update product' });

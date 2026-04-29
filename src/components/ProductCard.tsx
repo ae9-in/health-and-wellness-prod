@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { Product } from '@/lib/types';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,9 +12,9 @@ interface ProductCardProps {
   product: Product;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
-  const { addToCart } = useCart();
-  const brandName = product.brand?.name || 'Wellspring Brand';
+  const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || null);
+
+  const priceToDisplay = selectedVariant ? (selectedVariant.discountPrice || selectedVariant.price) : product.price;
 
   return (
     <Card className="flex h-full flex-col overflow-hidden rounded-[2rem] border border-slate-100/80 bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl group">
@@ -48,22 +49,53 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.name}
           </h3>
         </Link>
+        
+        {/* Variant Selector */}
+        {product.variants && product.variants.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {product.variants.map((v) => (
+              <button
+                key={v.id}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSelectedVariant(v);
+                }}
+                className={`text-[10px] font-black px-2 py-1 rounded-lg border transition-all ${
+                  selectedVariant?.id === v.id
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-white text-slate-500 border-slate-200 hover:border-primary/50'
+                }`}
+              >
+                {v.quantity}{v.unit}
+              </button>
+            ))}
+          </div>
+        )}
+
         <p className="text-sm text-slate-500 leading-relaxed line-clamp-2">
           {product.description}
         </p>
       </CardContent>
 
       <CardFooter className="flex items-center justify-between gap-2 border-t border-slate-100/60 px-5 py-4">
-        <div className="text-xl font-bold text-primary">
-          {formatPrice(Number(product.price || 0))}
+        <div className="flex flex-col">
+          <div className="text-xl font-bold text-primary">
+            {formatPrice(Number(priceToDisplay || 0))}
+          </div>
+          {selectedVariant?.discountPrice && (
+            <div className="text-[10px] font-bold text-slate-400 line-through">
+              {formatPrice(selectedVariant.price)}
+            </div>
+          )}
         </div>
         <Button 
           size="sm" 
           className="rounded-full h-10 w-10 p-0 shadow-md"
           onClick={(e) => {
             e.preventDefault();
-            addToCart(product);
+            addToCart(product, selectedVariant?.id);
           }}
+          disabled={selectedVariant ? selectedVariant.stock <= 0 : product.stock <= 0}
         >
           <ShoppingCart className="h-4 w-4" />
         </Button>
