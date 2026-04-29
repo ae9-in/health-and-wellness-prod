@@ -19,6 +19,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import productRoutes from './routes/productRoutes';
 import settingRoutes from './routes/settingRoutes';
 import aiRoutes from './routes/aiRoutes';
+import razorpayRoutes from './routes/razorpayRoutes';
 import { generateAIPlan as handleGenerateAI, followUpQuestion as handleFollowUp } from './controllers/aiController';
 import Groq from 'groq-sdk';
 
@@ -98,6 +99,7 @@ app.use('/api/brands', brandRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/razorpay', razorpayRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', aiRoutes);
 

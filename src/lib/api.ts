@@ -446,3 +446,38 @@ export async function updateAvatar(token: string, formData: FormData) {
     body: formData
   }, token);
 }
+
+// ─── Razorpay Payment Gateway ─────────────────────────────────────────────────
+export async function createRazorpayOrder(
+  token: string,
+  payload: { items: { productId: string; quantity: number; price: number }[]; totalAmount: number }
+) {
+  return request<{
+    orderId: string;
+    razorpayOrderId: string;
+    amount: number;
+    currency: string;
+    keyId: string;
+  }>('/razorpay/create-order', { method: 'POST', body: JSON.stringify(payload) }, token);
+}
+
+export async function verifyRazorpayPayment(
+  token: string,
+  payload: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    orderId: string;
+  }
+) {
+  return request<{ success: boolean; order: any }>(
+    '/razorpay/verify',
+    { method: 'POST', body: JSON.stringify(payload) },
+    token
+  );
+}
+
+export async function getMyOrders(token: string) {
+  return request<any[]>('/razorpay/orders', { method: 'GET' }, token);
+}
+

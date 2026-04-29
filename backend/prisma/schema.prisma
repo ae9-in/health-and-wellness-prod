@@ -59,6 +59,7 @@ model User {
   affiliate          Affiliate?
   brand              Brand?
   healthPlans        HealthPlan[]
+  orders             Order[]
 }
 
 model Affiliate {
@@ -112,6 +113,7 @@ model Product {
   updatedAt      DateTime       @updatedAt
   commissions    Commission[]
   affiliateLinks AffiliateLink[]
+  orderItems     OrderItem[]
 }
 
 model AffiliateLink {
@@ -336,4 +338,35 @@ model HealthPlan {
   planData  Json     // Stores the generated plan categories/content
   metrics   Json?    // Stores age, weight, height at time of generation
   createdAt DateTime @default(now())
+}
+
+enum OrderStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model Order {
+  id              String      @id @default(uuid()) @db.Uuid
+  userId          String      @db.Uuid
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalAmount     Float
+  status          OrderStatus @default(PENDING)
+  razorpayOrderId String?     @unique
+  paymentId       String?     @unique
+  signature       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  orderId   String   @db.Uuid
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String   @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  price     Float
 }
