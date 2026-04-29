@@ -12,6 +12,9 @@ interface ProductCardProps {
   product: Product;
 }
 
+export default function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart();
+  const brandName = (product as any).brand || '';
   const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || null);
 
   const priceToDisplay = selectedVariant ? (selectedVariant.discountPrice || selectedVariant.price) : product.price;
