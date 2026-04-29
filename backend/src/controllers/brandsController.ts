@@ -109,11 +109,12 @@ export async function createProduct(req: AuthRequest, res: Response): Promise<vo
     });
 
     res.status(201).json({ product });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create product error:', error);
-    const message = error instanceof Error ? error.message : 'Unable to create product';
-    // Return detailed error for debugging
-    res.status(500).json({ error: message, details: error instanceof Error ? error.stack : error });
+    res.status(500).json({ 
+      error: error.message || 'Unable to create product',
+      details: error.stack 
+    });
   }
 }
 
@@ -150,9 +151,12 @@ export async function listBrandProducts(req: AuthRequest, res: Response): Promis
       },
     });
     res.json(products);
-  } catch (error) {
+  } catch (error: any) {
     console.error('List products error:', error);
-    res.status(500).json({ error: 'Unable to list products' });
+    res.status(500).json({ 
+      error: error.message || 'Unable to list products',
+      details: error.stack
+    });
   }
 }
 
